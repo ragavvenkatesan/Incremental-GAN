@@ -843,7 +843,7 @@ class igan (object):
                         input_params = base_params['c5'],                     
                         verbose = verbose
                         )
-        
+
         self.baseline.add_layer ( type = "conv_pool",
                         id = "c6",
                         origin = "c5",
@@ -1414,7 +1414,7 @@ class igan (object):
                         verbose = verbose
                         )
 
-        self.base.add_layer ( type = "conv_pool",
+        self.hallucinated.add_layer ( type = "conv_pool",
                         id = "c6-gan",
                         origin = "c5-gan",
                         num_neurons = 250,
