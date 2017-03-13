@@ -36,8 +36,8 @@ if __name__ == '__main__':
 
     # This will initialize the baseline incremental network.
     # This network is intended to demonstrate catastrophic forgetting
-    # will be training with the increment dataset.  
-    igan_obj.setup_baseline_inc ( dataset = inc, verbose = 2 )
+    # will be training with the increment dataset.
+    igan_obj.setup_baseline_inc ( inc, verbose = 2 )
     igan_obj.train_baseline_inc ( lr =lr, epochs = epochs, verbose = 2 )
 
     # This will initialize and train the hallucinated incremental network.
@@ -47,3 +47,4 @@ if __name__ == '__main__':
     igan_obj.setup_mentor (verbose = 2)
     igan_obj.setup_hallucinated_inc ( dataset = inc, verbose = 2 )
     igan_obj.train_hallucinated_inc ( lr =lr, epochs = epochs, verbose = 2 )    
+
