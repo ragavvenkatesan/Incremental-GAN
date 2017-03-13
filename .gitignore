@@ -5,3 +5,5 @@ writing
 *.png
 *.txt
 *.pyc
+*.xlsx
+records
