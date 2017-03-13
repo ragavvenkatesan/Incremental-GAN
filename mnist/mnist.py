@@ -12,31 +12,37 @@ class igan (object):
     """
     This class creates and train two networks a GAN and a MLP. 
     """
-    def __init__ (self, init_dataset, temperature = 3, verbose = 1):
+    def __init__ (self, init_dataset, root = '.', temperature = 3, verbose = 1):
         """
         Args:
             dataset: As usual.   
             temperature: For the softmax layer.                     
         """
-        f = open(init_dataset + '/data_params.pkl', 'rb')
+        self.base_dataset = init_dataset
+        f = open(self.base_dataset + '/data_params.pkl', 'rb')
         data_params = cPickle.load(f)
         f.close()        
         self.data_splits = data_params ['splits']
-        self.temperature = temperature
+        self.temperature = temperature        
         if self.data_splits['p'] == 0:
             self.base_num_classes = len( self.data_splits ['base'] )
         else:
             self.base_num_classes = len( self.data_splits ['shot'] + self.data_splits ['base'] )
-        self.setup_gan(dataset = init_dataset, verbose = verbose)
-        self.setup_base_mlp(dataset = init_dataset, verbose = verbose)
 
-    def setup_gan ( self, dataset, verbose = 1 ):
+    def setup_gan ( self, 
+                    dataset = None, 
+                    params = None, 
+                    cook = True, 
+                    root = '.', verbose = 1 ):
         """
         This function is a demo example of a generative adversarial network. 
         This is an example code. You should study this code rather than merely run it.  
 
         Args: 
             dataset: Supply a dataset.    
+            root: location to save down stuff. 
+            params: Initialize network with parameters. 
+            cook: <True> If False, won't cook.          
             verbose: Similar to the rest of the dataset.
 
         Returns:
@@ -49,8 +55,13 @@ class igan (object):
             replicaiton, but I tried as best as I could.
 
         """
+        if dataset is None:
+            dataset = self.base_dataset
+
         if verbose >=2:
             print (".. Creating a GAN network")
+
+        input_params = None
 
         optimizer_params =  {        
                     "momentum_type"       : 'polyak',             
@@ -68,7 +79,7 @@ class igan (object):
                         }
 
         visualizer_params = {
-                        "root"       : 'visualizer/gan',
+                        "root"       : root + '/visualizer/gan',
                         "frequency"  : 1,
                         "sample_size": 225,
                         "rgb_filters": False,
@@ -78,7 +89,7 @@ class igan (object):
                             }  
                         
         resultor_params    =    {
-                    "root"      : "resultor/gan",
+                    "root"      : root + "/resultor/gan",
                     "id"        : "resultor"
                                 }     
 
@@ -111,7 +122,7 @@ class igan (object):
                             # limits = (0,1),
                             verbose = verbose)
         
-        #x - inputs come from dataset 1 X 784
+        #x - inputs come from dataset 1 X 784\
         self.gan_net.add_layer ( type = "input",
                         id = "x",
                         verbose = verbose, 
@@ -120,29 +131,41 @@ class igan (object):
                         mean_subtract = False )
 
         # Generator layers
+        if not params is None:
+            input_params = params ['G1']
+
         self.gan_net.add_layer ( type = "dot_product",
                         origin = "z",
                         id = "G1",
                         num_neurons = 1200,
                         activation = 'relu',
-                        # batch_norm = True,
+                        # batch_norm   = True,
+                        input_params = input_params,
                         verbose = verbose
                         ) 
+
+        if not params is None:
+            input_params = params ['G2']
 
         self.gan_net.add_layer ( type = "dot_product",
                         origin = "G1",
                         id = "G2",
                         num_neurons = 1200,
                         activation = 'relu',
-                        # batch_norm = True,
+                        # batch_norm   = True,
+                        input_params = input_params,
                         verbose = verbose
                         )
+
+        if not params is None:
+            input_params = params ['G(z)']
 
         self.gan_net.add_layer ( type = "dot_product",
                         origin = "G2",
                         id = "G(z)",
                         num_neurons = 784,
                         activation = 'tanh',
+                        input_params = input_params,
                         verbose = verbose
                         )  # This layer is the one that creates the images.
             
@@ -154,15 +177,17 @@ class igan (object):
                         shape = (28,28),
                         verbose = verbose )
 
-
+        if not params is None:
+            input_params = params ['D1-x']
         self.gan_net.add_layer ( type = "dot_product",
                         id = "D1-x",
                         origin = "x",
                         num_neurons = 1200,
                         activation = ('maxout','maxout',5),
                         regularize = True,  
-                        # batch_norm = True,
-                        # dropout_rate = 0.5,                                                       
+                        # batch_norm  = True,
+                        # dropout_rate = 0.5,    
+                        input_params = input_params,                                                   
                         verbose = verbose
                         )
 
@@ -173,19 +198,22 @@ class igan (object):
                         num_neurons = 1200,
                         activation = ('maxout','maxout',5),
                         regularize = True,
-                        # batch_norm = True,
+                        # batch_norm  = True,
                         # dropout_rate = 0.5,                       
                         verbose = verbose
                         )
 
+        if not params is None:
+            input_params = params ['D2-x']
         self.gan_net.add_layer ( type = "dot_product",
                         id = "D2-x",
                         origin = "D1-x",
                         num_neurons = 1200,
                         activation = ('maxout','maxout',5),
                         regularize = True,       
-                        # batch_norm = True,
-                        # dropout_rate = 0.5,                                                                         
+                        # batch_norm  = True,
+                        # dropout_rate = 0.5,     
+                        input_params = input_params,                                                                    
                         verbose = verbose
                         )
 
@@ -197,10 +225,12 @@ class igan (object):
                         activation = ('maxout','maxout',5),
                         regularize = True,
                         # dropout_rate = 0.5,          
-                        # batch_norm = True,                    
+                        # batch_norm  = True,                    
                         verbose = verbose
                         )
 
+        if not params is None:
+            input_params = params ['D(x)']
         #C(D(x)) - This is the opposite of C(D(G(z))), real
         self.gan_net.add_layer ( type = "dot_product",
                         id = "D(x)",
@@ -220,7 +250,8 @@ class igan (object):
                         verbose = verbose
                         )
 
-        
+        if not params is None:
+            input_params = params ['softmax']        
         #C(D(x)) - This is the opposite of C(D(G(z))), real
         self.gan_net.add_layer ( type = "classifier",
                         id = "softmax",
@@ -236,7 +267,8 @@ class igan (object):
                         input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(x)'].output)) - \
                                     0.5 * T.mean(T.log(1-self.gan_net.layers['D(G(z))'].output)),
                         input_shape = (1,),
-                        id = "discriminator_task"
+                        id = "discriminator_task",
+                        verbose = verbose                        
                         )
 
         self.gan_net.add_layer ( type = "objective",
@@ -251,7 +283,8 @@ class igan (object):
         self.gan_net.add_layer (type = "tensor",
                         input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(G(z))'].output)),
                         input_shape = (1,),
-                        id = "objective_task"
+                        id = "objective_task",
+                        verbose = verbose
                         )
         self.gan_net.add_layer ( type = "objective",
                         id = "generator_obj",
@@ -274,25 +307,27 @@ class igan (object):
         
         # from yann.utils.graph import draw_network
         # draw_network(self.gan_net.graph, filename = 'gan.png')    
-        self.gan_net.pretty_print()
+        # self.gan_net.pretty_print()
         
-        self.gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", \
+        if cook is True:
+            self.gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", \
                                                                                 "generator_obj"],
-                    optimizer_params = optimizer_params,
-                    discriminator_layers = ["D1-x","D2-x"],
-                    generator_layers = ["G1","G2","G(z)"], 
-                    classifier_layers = ["D1-x","D2-x","softmax"],                                                
-                    softmax_layer = "softmax",
-                    game_layers = ("D(x)", "D(G(z))"),
-                    verbose = verbose )                      
+                                optimizer_params = optimizer_params,
+                                discriminator_layers = ["D1-x","D2-x"],
+                                generator_layers = ["G1","G2","G(z)"], 
+                                classifier_layers = ["D1-x","D2-x","softmax"],                                                
+                                softmax_layer = "softmax",
+                                game_layers = ("D(x)", "D(G(z))"),
+                                verbose = verbose )                      
 
-    def train_init_gan (self, lr = (0.04, 0.001), epochs= (15), verbose = 2):
+    def train_init_gan (self, lr = (0.04, 0.001), save_after_epochs = 1, epochs= (15), verbose = 2):
         """
         This method will train the initial GAN on base dataset. 
 
         Args:
             lr : leanring rates to train with. Default is (0.04, 0.001) 
             epochs: Epochs to train with. Default is (15)
+            save_after_epochs: Saves the network down after so many epochs.
             verbose : As usual.
         """  
  
@@ -303,24 +338,38 @@ class igan (object):
                 k = 1, 
                 learning_rates = lr,
                 pre_train_discriminator = 0,
-                validate_after_epochs = 1,
-                visualize_after_epochs = 1,
+                validate_after_epochs = 10,
+                visualize_after_epochs = 2,
+                save_after_epochs = save_after_epochs,
                 training_accuracy = True,
                 show_progress = True,
                 early_terminate = True,
                 verbose = verbose)
 
-    def setup_base_mlp ( self, dataset, verbose = 1 ):
+    def setup_base_mlp (self, 
+                        dataset = None, 
+                        root = '.', 
+                        params = None, 
+                        cook = True,
+                        verbose = 1 ):
         """
         This method is the same as the  tutorial on building a two layer multi-layer neural
         network. The built network is mnist->800->800->10 .It optimizes with polyak momentum and 
         rmsprop. 
 
         Args:
+            root: save location for data
+            params: Initialize network with params.
+            cook: <True> If False, won't cook.                      
             dataset: an already created dataset.
-        """
+        """        
         if verbose >=2:
             print (".. Creating the MLP network") 
+
+        if dataset is None:
+            dataset = self.base_dataset 
+            
+        input_params = None
 
         optimizer_params =  {        
                     "momentum_type"       : 'polyak',             
@@ -338,7 +387,7 @@ class igan (object):
                         }
 
         visualizer_params = {
-                        "root"       : 'visualizer/base-network',
+                        "root"       : root + '/visualizer/base-network',
                         "frequency"  : 1,
                         "sample_size": 225,
                         "rgb_filters": False,
@@ -348,7 +397,7 @@ class igan (object):
                             }                          
 
         resultor_params    =    {
-                    "root"      : "resultor/base-network",
+                    "root"      : root + "/resultor/base-network",
                     "id"        : "resultor-base"
                                 }     
 
@@ -373,11 +422,15 @@ class igan (object):
                         verbose = verbose 
                         ) 
 
+        
         self.base.add_layer ( type = "input",
                         id = "input",
                         verbose = verbose, 
                         datastream_origin = 'data-base')
         
+        if not params is None:
+            input_params = params ['c1']
+
         self.base.add_layer ( type = "conv_pool",
                         id = "c1",
                         origin = "input",
@@ -386,50 +439,63 @@ class igan (object):
                         pool_size = (2,2),
                         activation = 'relu',
                         regularize = True,  
-                        batch_norm = True,                                                      
+                        batch_norm= True,  
+                        input_params = input_params,                                                    
                         verbose = verbose
                         )
 
+        if not params is None:
+            input_params = params ['c2']
         self.base.add_layer ( type = "conv_pool",
                         id = "c2",
                         origin = "c1",
                         num_neurons = 50,
                         filter_shape = (3,3),
                         pool_size = (2,2),
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,                                                         
-                        activation = 'relu',                        
+                        activation = 'relu',   
+                        input_params = input_params,                     
                         verbose = verbose
                         )
 
+        if not params is None:
+            input_params = params ['fc1']
         self.base.add_layer ( type = "dot_product",
                         origin = "c2",
                         id = "fc1",
                         num_neurons = 800,
                         activation = 'relu',
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,
-                        dropout_rate = 0.5,                        
+                        dropout_rate = 0.5,     
+                        input_params = input_params,                   
                         verbose = verbose
                         )
 
+        if not params is None:
+            input_params = params ['fc2']
         self.base.add_layer ( type = "dot_product",
                         origin = "fc1",
                         id = "fc2",
                         num_neurons = 800,                    
                         activation = 'relu',
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
-                        regularize = True,                        
+                        regularize = True,   
+                        input_params = input_params,                     
                         verbose = verbose
                         ) 
         
+        if not params is None:
+            input_params = params ['softmax']
         self.base.add_layer ( type = "classifier",
                         id = "softmax",
                         origin = "fc2",
                         num_classes = self.base_num_classes,
                         activation = 'softmax',
-                        regularize = True,                        
+                        regularize = True,   
+                        input_params = input_params,                     
                         verbose = verbose
                         )                  
 
@@ -439,22 +505,27 @@ class igan (object):
                         verbose = verbose
                         )
 
-        self.base.pretty_print()
+        # self.base.pretty_print()
         # draw_network(self.gan_net.graph, filename = 'base.png')    
-    
-        self.base.cook( optimizer = 'optim-base',
-                objective_layers = ['obj-base'],
-                datastream = 'data-base',
-                classifier = 'softmax-base',
-                verbose = verbose
-                )
+        if cook is True:
+            self.base.cook( optimizer = 'optim-base',
+                    objective_layers = ['obj-base'],
+                    datastream = 'data-base',
+                    classifier = 'softmax-base',
+                    verbose = verbose
+                    )
 
-    def train_base_mlp (self, lr = (0.05, 0.01, 0.001), epochs = (20, 20), verbose = 2):
+    def train_base_mlp (self, 
+                        lr = (0.05, 0.01, 0.001), 
+                        epochs = (20, 20), 
+                        save_after_epochs = 1, 
+                        verbose = 2):
         """
         This method will train the initial MLP on base dataset. 
 
         Args:
             lr : leanring rates to train with. Default is (0.05, 0.01, 0.001)
+            save_after_epochs: Saves the network down after so many epochs.            
             epochs: Epochs to train with. Default is (20, 20)        
             verbose : As usual.
         """     
@@ -462,7 +533,9 @@ class igan (object):
             print ( ".. Training Base MLP ")
 
         self.base.train( epochs = epochs, 
-                validate_after_epochs = 1,
+                validate_after_epochs = 10,
+                visualize_after_epochs = 10,  
+                save_after_epochs = save_after_epochs,                          
                 training_accuracy = True,
                 show_progress = True,
                 early_terminate = True,
@@ -471,11 +544,12 @@ class igan (object):
 
         self.base.test(verbose = verbose)
         
-    def setup_baseline_inc(self, dataset, verbose= 2):
+    def setup_baseline_inc(self, dataset, root = '.', verbose= 2):
         """
         This method updates the increment the mlp on the increment batch.
 
         Args:
+            root: location to save outputs.
             dataset: Increment dataset.
 
         Notes:
@@ -508,7 +582,7 @@ class igan (object):
         self.baseline = network ()  
 
         visualizer_params = {
-                        "root"       : 'visualizer/baseline-inc',
+                        "root"       : root + '/visualizer/baseline-inc',
                         "frequency"  : 1,
                         "sample_size": 225,
                         "rgb_filters": False,
@@ -518,7 +592,7 @@ class igan (object):
                             }     
 
         resultor_params    =    {
-                    "root"      : "resultor/baseline-inc",
+                    "root"      : root + "/resultor/baseline-inc",
                     "id"        : "resultor-inc-baseline"
                                 }     
 
@@ -557,7 +631,7 @@ class igan (object):
                         pool_size = (2,2),
                         activation = 'relu',
                         regularize = True,  
-                        batch_norm = True, 
+                        batch_norm= True, 
                         input_params = base_params ['c1'],                                                                              
                         verbose = verbose
                         )
@@ -568,7 +642,7 @@ class igan (object):
                         num_neurons = 50,
                         filter_shape = (3,3),
                         pool_size = (2,2),
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,                                                         
                         activation = 'relu',       
                         input_params = base_params ['c2'],                                          
@@ -581,7 +655,7 @@ class igan (object):
                         num_neurons = 800,
                         activation = 'relu',
                         input_params = base_params ['fc1'],        
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                                        
                         verbose = verbose
@@ -593,7 +667,7 @@ class igan (object):
                         num_neurons = 800,                    
                         activation = 'relu',
                         input_params = base_params ['fc2'],    
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                                                                    
                         verbose = verbose
@@ -633,7 +707,7 @@ class igan (object):
                         verbose = verbose
                         )
 
-        self.baseline.pretty_print()
+        # self.baseline.pretty_print()
         # draw_network(self.baseline.graph, filename = 'baseline.png')    
         
         self.baseline.cook( optimizer = 'optim-inc-baseline',
@@ -643,7 +717,11 @@ class igan (object):
                 verbose = verbose
                 )
 
-    def train_baseline_inc (self, lr = (0.05, 0.01, 0.001), epochs = (20, 20), verbose = 2):
+    def train_baseline_inc (self,
+                            save_after_epochs = 1,
+                            lr = (0.05, 0.01, 0.001),
+                            epochs = (20, 20), 
+                            verbose = 2):
         
         """
         This method will train the incremental MLP on incremental dataset. 
@@ -658,6 +736,8 @@ class igan (object):
 
         self.baseline.train( epochs = epochs, 
                 validate_after_epochs = 1,
+                visualize_after_epochs = 10,
+                save_after_epochs = save_after_epochs,
                 training_accuracy = True,
                 show_progress = True,
                 early_terminate = True,
@@ -666,7 +746,7 @@ class igan (object):
 
         self.baseline.test(verbose = verbose)
 
-    def setup_mentor(self, verbose= 2):
+    def setup_mentor(self, temperature = None, verbose= 2):
         """
         This method sets up the metor network which is basically the same network that takes the 
         GAN as input and produces softmaxes.
@@ -676,6 +756,9 @@ class igan (object):
 
         self.mentor = network ()  
 
+        if not temperature is None:
+            self.temperature = temperature
+            
         self.mentor.add_layer ( type = "tensor",
                         id = "input",
                         input = self.gan_net.dropout_layers['G(z)'].output,
@@ -697,7 +780,7 @@ class igan (object):
                         pool_size = (2,2),
                         activation = 'relu',
                         regularize = True,  
-                        batch_norm = True, 
+                        batch_norm= True, 
                         input_params = self.base.dropout_layers['c1'].params,                                                                                                  
                         verbose = verbose
                         )
@@ -708,7 +791,7 @@ class igan (object):
                         num_neurons = 50,
                         filter_shape = (3,3),
                         pool_size = (2,2),
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,                                                         
                         activation = 'relu',       
                         input_params = self.base.dropout_layers['c2'].params,                                                                                                  
@@ -721,9 +804,9 @@ class igan (object):
                         id = "fc1",
                         num_neurons = 800,
                         activation = 'relu',
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
-                        egularize = True,            
+                        regularize = True,            
                         input_params = self.base.dropout_layers['fc1'].params,                                                                                                                                      
                         verbose = verbose
                         )
@@ -734,7 +817,7 @@ class igan (object):
                         num_neurons = 800,                    
                         activation = 'relu',
                         input_params = self.base.dropout_layers['fc2'].params,     
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                                           
                         verbose = verbose
@@ -760,15 +843,16 @@ class igan (object):
                         verbose = verbose
                         )                        
 
-        self.mentor.pretty_print()
+        # self.mentor.pretty_print()
         # draw_network(self.mentor.graph, filename = 'mentor.png')    
         
 
-    def setup_hallucinated_inc(self, dataset, verbose= 2):
+    def setup_hallucinated_inc(self, dataset, root = '.', verbose= 2):
         """
         This method setup the increment the mlp on the increment net.
 
         Args:
+            root: location to save outputs.        
             dataset: Increment dataset.
 
         Notes:
@@ -788,7 +872,7 @@ class igan (object):
         self.data_splits = data_params ['splits']
         optimizer_params =  {
                     "momentum_type"       : 'polyak',             
-                    "momentum_params"     : (0.9, 0.95, 30),      
+                    "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
                     "optimizer_type"      : 'rmsprop',                
                     "id"                  : "optim-inc-hallucinated"
@@ -802,7 +886,7 @@ class igan (object):
                         }     
 
         visualizer_params = {
-                        "root"       : 'visualizer/hallucinated-inc',
+                        "root"       : root + '/visualizer/hallucinated-inc',
                         "frequency"  : 1,
                         "sample_size": 225,
                         "rgb_filters": False,
@@ -812,7 +896,7 @@ class igan (object):
                             }     
 
         resultor_params    =    {
-                    "root"      : "resultor/hallucianted-inc",
+                    "root"      : root + "/resultor/hallucianted-inc",
                     "id"        : "hallucinated"
                                 }     
 
@@ -857,7 +941,7 @@ class igan (object):
                         pool_size = (2,2),
                         activation = 'relu',
                         regularize = True,  
-                        batch_norm = True, 
+                        batch_norm= True, 
                         input_params = base_params ['c1'],                                                                              
                         verbose = verbose
                         )
@@ -868,7 +952,7 @@ class igan (object):
                         num_neurons = 50,
                         filter_shape = (3,3),
                         pool_size = (2,2),
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,                                                         
                         activation = 'relu',       
                         input_params = base_params ['c2'],                                          
@@ -881,7 +965,7 @@ class igan (object):
                         num_neurons = 800,
                         activation = 'relu',
                         input_params = base_params ['fc1'],     
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                                           
                         verbose = verbose )
@@ -892,27 +976,33 @@ class igan (object):
                         num_neurons = 800,                    
                         activation = 'relu',
                         input_params = base_params ['fc2'],     
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                                                                   
                         verbose = verbose ) 
 
-        # For classifier layer, recreating...        
-        
-        old_w = self.base.dropout_layers['softmax'].w.get_value(borrow = True)
-        old_b = self.base.dropout_layers['softmax'].b.get_value(borrow = True)
-        
+        # For classifier layer, recreating...   
+    
+        old_w = base_params ['softmax'][0].eval()
+        old_b = base_params ['softmax'][1].eval()
+
         if self.inc_num_classes > old_w.shape[1]:
+            assert len(self.data_splits ['shot']) == old_w.shape[1]
+            
             new_w = numpy.asarray(0.01 * rng.standard_normal( size=(old_w.shape[0], 
-                                                                len( self.data_splits ['shot'])
+                                                                len( self.data_splits ['base'])
                                                                 )
                                                                 ),
                                     dtype=theano.config.floatX)
-            new_w_values = numpy.concatenate((old_w,new_w), axis = 1)                                    
-            new_b = numpy.asarray(0.01 * rng.standard_normal( size = (len( self.data_splits ['shot']))), 
+            new_w_values = numpy.concatenate((old_w,new_w), axis = 1)   
+
+            new_b = numpy.asarray(0.01 * rng.standard_normal( size = (len( 
+                                                                self.data_splits ['base']))), 
                                                            dtype=theano.config.floatX)
             new_b_values = numpy.concatenate((old_b,new_b), axis = 0)  
         else:
+            assert self.inc_num_classes == old_w.shape[1]
+            
             new_w_values = old_w
             new_b_values = old_b 
 
@@ -956,7 +1046,7 @@ class igan (object):
                         pool_size = (2,2),
                         activation = 'relu',
                         regularize = True,  
-                        batch_norm = True,       
+                        batch_norm= True,       
                         input_params = self.hallucinated.dropout_layers ['c1-data'].params,                                                                    
                         verbose = verbose
                         )
@@ -967,7 +1057,7 @@ class igan (object):
                         num_neurons = 50,
                         filter_shape = (3,3),
                         pool_size = (2,2),
-                        batch_norm = True,
+                        batch_norm= True,
                         regularize = True,                                                         
                         activation = 'relu',    
                         input_params = self.hallucinated.dropout_layers ['c2-data'].params,                                                                                                                
@@ -979,7 +1069,7 @@ class igan (object):
                         id = "fc1-gan",
                         num_neurons = 800,
                         activation = 'relu',
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                        
                         input_params = self.hallucinated.dropout_layers['fc1-data'].params,                        
@@ -990,7 +1080,7 @@ class igan (object):
                         id = "fc2-gan",
                         num_neurons = 800,                    
                         activation = 'relu',
-                        batch_norm = True,
+                        batch_norm= True,
                         dropout_rate = 0.5,
                         regularize = True,                        
                         input_params = self.hallucinated.dropout_layers['fc2-data'].params,                                                  
@@ -1064,7 +1154,7 @@ class igan (object):
                         origin = ("softmax-inc-hallucinated-gan", mentor_target),
                          )      
 
-        self.hallucinated.pretty_print()
+        # self.hallucinated.pretty_print()
         # draw_network(self.hallucinated.graph, filename = 'hallucinated.png')    
         
         self.hallucinated.cook( optimizer = 'optim-inc-hallucinated',
@@ -1075,7 +1165,11 @@ class igan (object):
                 verbose = verbose
                 )
 
-    def train_hallucinated_inc (self, lr = (0.05, 0.01, 0.001), epochs = (20, 20), verbose = 2):
+    def train_hallucinated_inc (self, 
+                                save_after_epochs = 1,
+                                lr = (0.05, 0.01, 0.001), 
+                                epochs = (20, 20), 
+                                verbose = 2):
         """
         This method will train the incremental MLP on incremental dataset. 
 
@@ -1089,6 +1183,8 @@ class igan (object):
             print (".. Training hallucinated network")                  
         self.hallucinated.train( epochs = epochs, 
                 validate_after_epochs = 1,
+                visualize_after_epochs = 10,   
+                save_after_epochs = save_after_epochs,             
                 training_accuracy = True,
                 show_progress = True,
                 early_terminate = True,
