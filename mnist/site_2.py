@@ -6,7 +6,7 @@ from yann.utils.pickle import load
 if __name__ == '__main__':
     
     # simply locations
-    gan = 39   # which epoch of gan do you want transfer to site 2 ?    
+    gan = 4   # which epoch of gan do you want transfer to site 2 ?    
     site_1_root = 'records/site_1'
     root = 'records/site_2/gan_' + str(gan)
     if not os.path.exists(root):
@@ -14,7 +14,8 @@ if __name__ == '__main__':
 
     lr = (0.00005, 0.01, 0.0001)    
     epochs =(10, 10)
-    p_vals = [0, 10, 50, 100, 500]
+    p_vals = [0, 10, 50, 100, 500, 1000, 2500, 4700]
+    p_vals = [1000, 2500, 4700]
 
     # setup incremental dataset parameters dataset.
     temp_splits = { "shot"               : [6,7,8,9],
@@ -61,13 +62,13 @@ if __name__ == '__main__':
             os.makedirs(root + '/p_' + str(p))
         baseline_root = root + '/p_' + str(p) + '/baseline'
         site2.setup_baseline_inc ( dataset = inc, root = baseline_root, verbose = 1 )
-        site2.train_baseline_inc ( lr =lr, epochs = epochs, verbose = 2 )
+        # site2.train_baseline_inc ( lr =lr, epochs = epochs, verbose = 2 )
 
         # This will initialize and train the hallucinated incremental network.
         # This network is intended to deomonstrate that hallucinating from GAN 
         # could allow us to learn incremental learning. This is counter to 
         # what the baseline demonstrates.
         igan_root = root + '/p_' + str(p) + '/igan'        
-        site2.setup_mentor (temperature = 2, verbose = 1)
+        site2.setup_mentor (temperature = 8, verbose = 1)
         site2.setup_hallucinated_inc ( dataset = inc, root = igan_root, verbose = 1 )
         site2.train_hallucinated_inc ( lr =lr, epochs = epochs, verbose = 2 )            
