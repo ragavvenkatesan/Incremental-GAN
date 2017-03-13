@@ -23,7 +23,10 @@ class igan (object):
         f.close()        
         self.data_splits = data_params ['splits']
         self.temperature = temperature
-        self.current_num_classes = len( self.data_splits ['base'] )
+        if self.data_splits['p'] == 0:
+            self.base_num_classes = len( self.data_splits ['base'] )
+        else:
+            self.base_num_classes = len( self.data_splits ['shot'] + self.data_splits ['base'] )
         self.setup_gan(dataset = init_dataset, verbose = verbose)
         self.setup_base_mlp(dataset = init_dataset, verbose = verbose)
 
@@ -96,11 +99,12 @@ class igan (object):
                         params = resultor_params,
                         verbose = verbose 
                         ) 
-
+        self.mini_batch_size = self.gan_net.datastream['data'].mini_batch_size
+        
         #z - latent space created by random layer
         self.gan_net.add_layer(type = 'random',
                             id = 'z',
-                            num_neurons = (100,10), 
+                            num_neurons = (self.mini_batch_size,10), 
                             distribution = 'gaussian',
                             mu = 0,
                             sigma = 1,
@@ -221,7 +225,7 @@ class igan (object):
         self.gan_net.add_layer ( type = "classifier",
                         id = "softmax",
                         origin = "D2-x",
-                        num_classes = self.current_num_classes,
+                        num_classes = self.base_num_classes,
                         activation = 'softmax',
                         verbose = verbose
                     )
@@ -329,7 +333,7 @@ class igan (object):
         dataset_params  = {
                                 "dataset"   : dataset,
                                 "svm"       : False, 
-                                "n_classes" : self.current_num_classes,
+                                "n_classes" : self.base_num_classes,
                                 "id"        : 'data-base'
                         }
 
@@ -423,7 +427,7 @@ class igan (object):
         self.base.add_layer ( type = "classifier",
                         id = "softmax",
                         origin = "fc2",
-                        num_classes = self.current_num_classes,
+                        num_classes = self.base_num_classes,
                         activation = 'softmax',
                         regularize = True,                        
                         verbose = verbose
@@ -485,7 +489,7 @@ class igan (object):
         data_params = cPickle.load(f)
         f.close()        
         self.data_splits = data_params ['splits']
-        self.current_num_classes = self.current_num_classes + len( self.data_splits ['base'] )
+        self.inc_num_classes = len(self.data_splits ['shot']) + len( self.data_splits ['base'] )
         optimizer_params =  {        
                     "momentum_type"       : 'polyak',             
                     "momentum_params"     : (0.65, 0.9, 30),      
@@ -497,7 +501,7 @@ class igan (object):
         dataset_params  = {
                                 "dataset"   :  dataset,
                                 "svm"       :  False, 
-                                "n_classes" : self.current_num_classes,
+                                "n_classes" : self.inc_num_classes,
                                 "id"        : 'data-inc-baseline'
                         }     
 
@@ -616,7 +620,7 @@ class igan (object):
         self.baseline.add_layer ( type = "classifier",
                         id = "softmax-inc-baseline",
                         origin = "fc2",
-                        num_classes = self.current_num_classes,
+                        num_classes = self.inc_num_classes,
                         activation = 'softmax',
                         regularize = True,                        
                         input_params = [new_w, new_b],
@@ -630,7 +634,7 @@ class igan (object):
                         )
 
         self.baseline.pretty_print()
-        draw_network(self.baseline.graph, filename = 'baseline.png')    
+        # draw_network(self.baseline.graph, filename = 'baseline.png')    
         
         self.baseline.cook( optimizer = 'optim-inc-baseline',
                 objective_layers = ['obj-inc-baseline'],
@@ -675,7 +679,7 @@ class igan (object):
         self.mentor.add_layer ( type = "tensor",
                         id = "input",
                         input = self.gan_net.dropout_layers['G(z)'].output,
-                        input_shape = (100,784),
+                        input_shape = (self.mini_batch_size,784),
                         verbose = verbose )
 
         self.mentor.add_layer ( type = "unflatten",
@@ -757,7 +761,7 @@ class igan (object):
                         )                        
 
         self.mentor.pretty_print()
-        draw_network(self.mentor.graph, filename = 'mentor.png')    
+        # draw_network(self.mentor.graph, filename = 'mentor.png')    
         
 
     def setup_hallucinated_inc(self, dataset, verbose= 2):
@@ -782,7 +786,6 @@ class igan (object):
         data_params = cPickle.load(f)
         f.close()        
         self.data_splits = data_params ['splits']
-        # self.current_num_classes = self.current_num_classes + len( self.data_splits ['base'] )
         optimizer_params =  {
                     "momentum_type"       : 'polyak',             
                     "momentum_params"     : (0.9, 0.95, 30),      
@@ -894,34 +897,39 @@ class igan (object):
                         regularize = True,                                                                   
                         verbose = verbose ) 
 
-        # For classifier layer, recreating...
+        # For classifier layer, recreating...        
+        
         old_w = self.base.dropout_layers['softmax'].w.get_value(borrow = True)
         old_b = self.base.dropout_layers['softmax'].b.get_value(borrow = True)
+        
+        if self.inc_num_classes > old_w.shape[1]:
+            new_w = numpy.asarray(0.01 * rng.standard_normal( size=(old_w.shape[0], 
+                                                                len( self.data_splits ['shot'])
+                                                                )
+                                                                ),
+                                    dtype=theano.config.floatX)
+            new_w_values = numpy.concatenate((old_w,new_w), axis = 1)                                    
+            new_b = numpy.asarray(0.01 * rng.standard_normal( size = (len( self.data_splits ['shot']))), 
+                                                           dtype=theano.config.floatX)
+            new_b_values = numpy.concatenate((old_b,new_b), axis = 0)  
+        else:
+            new_w_values = old_w
+            new_b_values = old_b 
 
-        new_w = numpy.asarray(0.01 * rng.standard_normal( size=(old_w.shape[0], 
-                                                               len( self.data_splits ['base'])
-                                                               )
-                                                               ),
-                                   dtype=theano.config.floatX)
-        new_w_values = numpy.concatenate((old_w,new_w), axis = 1)                                    
-        new_b = numpy.asarray(0.01 * rng.standard_normal( size = (len( self.data_splits ['base']))), 
-                                                        dtype=theano.config.floatX)
-        new_b_values = numpy.concatenate((old_b,new_b), axis = 0)                                    
         new_w = theano.shared(value= new_w_values, name='inc-weights', borrow = True) 
         new_b = theano.shared(value= new_b_values, name='inc-bias',    borrow = True)  
       
         # This removes the last two parameters added (Which should be the softmax)
         # This works on the labels from the dataset.
-
         self.hallucinated.add_layer ( type = "classifier",
                         id = "softmax-inc-hallucinated-data",
                         origin = "fc2-data",
-                        num_classes = self.current_num_classes,
+                        num_classes = self.inc_num_classes,
                         activation = 'softmax',
                         input_params = [new_w, new_b],
                         regularize = True,                        
                         verbose = verbose  )
-
+            
 
         ##########
         # Softmax temperature of incremental network from GAN inputs.
@@ -988,11 +996,10 @@ class igan (object):
                         input_params = self.hallucinated.dropout_layers['fc2-data'].params,                                                  
                         verbose = verbose  )                         
     
-
         self.hallucinated.add_layer ( type = "classifier",
                         id = "softmax-inc-hallucinated-gan",
                         origin = "fc2-gan",
-                        num_classes = self.current_num_classes,
+                        num_classes = self.inc_num_classes,
                         activation = ('softmax', self.temperature),
                         input_params = self.hallucinated.dropout_layers \
                                                            ['softmax-inc-hallucinated-data'].params,      
@@ -1003,34 +1010,40 @@ class igan (object):
         # This will make the mentor values available to the current network so that we 
         # can caluclate errors
         ##########
-        
-        self.hallucinated.add_layer(type = "random",
-                                            id = 'zero-targets',
-                                            num_neurons = (100,self.current_num_classes - \
+        if self.inc_num_classes > old_w.shape[1]:
+            # Needed only if mentor and this has different number of classes.
+            self.hallucinated.add_layer(type = "random",
+                                                id = 'zero-targets',
+                                                num_neurons = (self.mini_batch_size, \
+                                                                self.inc_num_classes - \
                                                                                 old_w.shape[1] ), 
-                                            distribution = 'binomial',
-                                            p = 0,
-                                            verbose = verbose)
+                                                distribution = 'binomial',
+                                                p = 0,
+                                                verbose = verbose)
 
-        input_shape = [self.mentor.layers['softmax-base-temperature'].output_shape,
-                       self.hallucinated.layers['zero-targets'].output_shape]                       
+            input_shape = [self.mentor.layers['softmax-base-temperature'].output_shape,
+                        self.hallucinated.layers['zero-targets'].output_shape]                       
 
         # importing a layer from the mentor network. 
         self.hallucinated.add_layer (type = "tensor",
                                             id = 'merge-import',
                                             input = self.mentor.inference_layers \
-                                                                ['softmax-base-temperature'].output,
+                                                            ['softmax-base-temperature'].output,
                                             input_shape = self.mentor.inference_layers \
-                                                          ['softmax-base-temperature'].output_shape,
+                                                    ['softmax-base-temperature'].output_shape,
                                             verbose = verbose )
 
-        # This layer is a 10 node output of the softmax temperature. Sets up the mentor targets.
-        self.hallucinated.add_layer (type = "merge",
-                                            layer_type = "concatenate",
-                                            id = "mentor-target",
-                                            origin = ( 'merge-import', 'zero-targets' ),
-                                            verbose = verbose
-                                            )
+        if self.inc_num_classes > old_w.shape[1]:
+            # This layer is a 10 node output of the softmax temperature. Sets up the mentor targets.
+            self.hallucinated.add_layer (type = "merge",
+                                                layer_type = "concatenate",
+                                                id = "mentor-target",
+                                                origin = ( 'merge-import', 'zero-targets' ),
+                                                verbose = verbose
+                                                )
+            mentor_target = 'mentor-target'
+        else:
+            mentor_target = 'merge-import'
 
         ##########        
         # objective layers
@@ -1048,11 +1061,11 @@ class igan (object):
                         id = "obj-temperature",
                         layer_type = "error",
                         error = "rmse",
-                        origin = ("softmax-inc-hallucinated-gan", "mentor-target"),
+                        origin = ("softmax-inc-hallucinated-gan", mentor_target),
                          )      
 
         self.hallucinated.pretty_print()
-        draw_network(self.hallucinated.graph, filename = 'hallucinated.png')    
+        # draw_network(self.hallucinated.graph, filename = 'hallucinated.png')    
         
         self.hallucinated.cook( optimizer = 'optim-inc-hallucinated',
                 objective_layers = ['obj-inc','obj-temperature'],
