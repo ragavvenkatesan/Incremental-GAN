@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     lr = (0.00005, 0.01, 0.0001)    
     epochs =(15, 15)
-    p_vals = [0, 10, 50, 100, 500]
+    p_vals = [0, 10, 50, 100, 500, 2000]
 
     # setup incremental dataset parameters dataset.
     temp_splits = { "shot"               : [6,7,8,9],
@@ -34,7 +34,7 @@ if __name__ == '__main__':
                     verbose = 1)
 
     print (". Setup transfered base network from site 1.")    
-    base_params = load(site_1_root + '/resultor/base-network/params/epoch_20.pkl') 
+    base_params = load(site_1_root + '/resultor/base-network/params/epoch_29.pkl') 
     site2.setup_base_mlp(   dataset = temp_base_data, 
                             root = root, 
                             params = base_params, 
@@ -68,6 +68,6 @@ if __name__ == '__main__':
         # could allow us to learn incremental learning. This is counter to 
         # what the baseline demonstrates.
         igan_root = root + '/p_' + str(p) + '/igan'        
-        site2.setup_mentor (temperature = 2, verbose = 1)
+        site2.setup_mentor (temperature = 3, verbose = 1)
         site2.setup_hallucinated_inc ( dataset = inc, root = igan_root, verbose = 1 )
         site2.train_hallucinated_inc ( lr =lr, epochs = epochs, verbose = 2 )            
