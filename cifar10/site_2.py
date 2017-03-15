@@ -12,16 +12,18 @@ if __name__ == '__main__':
     if not os.path.exists(root):
         os.makedirs(root)           
 
-    lr = (0.00005, 0.01, 0.0001)    
-    epochs =(15, 15)
+    lr = (0.00005, 0.01, 0.001, 1e-4, 1e-5)    
+    epochs =(15, 15, 10, 10)
     p_vals = [0, 10, 50, 100, 500, 2000]
-
+    temperature = 8
     # setup incremental dataset parameters dataset.
     temp_splits = { "shot"               : [6,7,8,9],
                     "base"               : [0,1,2,3,4,5],    
                     "p"                  : 0   }  
 
-    temp_base_data = inc_dataset (splits = temp_splits, verbose = 1)
+    temp_base_data = inc_dataset (splits = temp_splits, 
+                                    location = '/home/ASUAD/rvenka10/airlock', 
+                                        verbose = 1)
     temp_base_data = temp_base_data.dataset_location()  
     site2 = igan ( init_dataset = temp_base_data, root = root, verbose = 1 )
 
@@ -51,7 +53,9 @@ if __name__ == '__main__':
         inc_splits ['p'] = p 
 
         print (". Running p = " + str(p) )
-        inc = inc_dataset (splits = inc_splits, verbose = 1)
+        inc = inc_dataset (splits = inc_splits,
+                            location = '/home/ASUAD/rvenka10/airlock',
+                             verbose = 1)
         inc = inc.dataset_location()              
 
         # This will initialize the baseline incremental network.
@@ -68,6 +72,6 @@ if __name__ == '__main__':
         # could allow us to learn incremental learning. This is counter to 
         # what the baseline demonstrates.
         igan_root = root + '/p_' + str(p) + '/igan'        
-        site2.setup_mentor (temperature = 3, verbose = 1)
+        site2.setup_mentor (temperature = temperature, verbose = 1)
         site2.setup_hallucinated_inc ( dataset = inc, root = igan_root, verbose = 1 )
         site2.train_hallucinated_inc ( lr =lr, epochs = epochs, verbose = 2 )            

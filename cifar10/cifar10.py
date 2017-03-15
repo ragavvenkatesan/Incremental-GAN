@@ -122,7 +122,7 @@ class igan (object):
         #z - latent space created by random layer
         self.gan_net.add_layer(type = 'random',
                             id = 'z',
-                            num_neurons = (500,128), 
+                            num_neurons = (self.mini_batch_size,128), 
                             distribution = 'normal',
                             mu = 0,
                             sigma = 1,
@@ -196,7 +196,7 @@ class igan (object):
                         verbose = verbose
                         )
         
-        #x - inputs come from dataset 1 X 784
+        #x - inputs come from dataset 1 X 3072
         self.gan_net.add_layer ( type = "input",
                         id = "x",
                         verbose = verbose, 
@@ -622,7 +622,7 @@ class igan (object):
                         activation = 'relu',
                         batch_norm= True,
                         regularize = True,
-                        dropout_rate = 0.5,     
+                        dropout_rate = 0.7,     
                         input_params = input_params,                   
                         verbose = verbose
                         )
@@ -635,7 +635,7 @@ class igan (object):
                         num_neurons = 1024,                    
                         activation = 'relu',
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,   
                         input_params = input_params,                     
                         verbose = verbose
@@ -864,7 +864,7 @@ class igan (object):
                         activation = 'relu',
                         input_params = base_params ['fc1'],        
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                                        
                         verbose = verbose
                         )
@@ -876,7 +876,7 @@ class igan (object):
                         activation = 'relu',
                         input_params = base_params ['fc2'],    
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                                                                    
                         verbose = verbose
                         ) 
@@ -948,7 +948,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 learning_rates = lr,               
                 verbose = verbose)
 
@@ -970,13 +970,13 @@ class igan (object):
         self.mentor.add_layer ( type = "tensor",
                         id = "input",
                         input = self.gan_net.dropout_layers['G(z)'].output,
-                        input_shape = (self.mini_batch_size,784),
+                        input_shape = (self.mini_batch_size,3072),
                         verbose = verbose )
 
         self.mentor.add_layer ( type = "unflatten",
                         id = "input-unflattened",
                         origin ="input",
-                        shape = (28,28),
+                        shape = (32,32,3),
                         verbose = verbose
                         )
 
@@ -985,7 +985,7 @@ class igan (object):
                         origin = "input-unflattened",
                         num_neurons = 20,
                         filter_size = (5,5),
-                        pool_size = (2,2),
+                        pool_size = (1,1),
                         activation = 'relu',
                         regularize = True,  
                         batch_norm= True, 
@@ -1061,10 +1061,10 @@ class igan (object):
         self.mentor.add_layer ( type = "dot_product",
                         origin = "c6",
                         id = "fc1",
-                        num_neurons = 1200,
+                        num_neurons = 1024,
                         activation = 'relu',
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,            
                         input_params = self.base.dropout_layers['fc1'].params,                                                                                                                                      
                         verbose = verbose
@@ -1073,11 +1073,11 @@ class igan (object):
         self.mentor.add_layer ( type = "dot_product",
                         origin = "fc1",
                         id = "fc2",
-                        num_neurons = 1200,                    
+                        num_neurons = 1024,                    
                         activation = 'relu',
                         input_params = self.base.dropout_layers['fc2'].params,     
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                                           
                         verbose = verbose
                         ) 
@@ -1197,7 +1197,7 @@ class igan (object):
                         origin = "data",
                         num_neurons = 20,
                         filter_size = (5,5),
-                        pool_size = (2,2),
+                        pool_size = (1,1),
                         activation = 'relu',
                         regularize = True,  
                         batch_norm= True, 
@@ -1273,22 +1273,22 @@ class igan (object):
         self.hallucinated.add_layer ( type = "dot_product",
                         origin = "c6-data",
                         id = "fc1-data",
-                        num_neurons = 1200,
+                        num_neurons = 1024,
                         activation = 'relu',
                         input_params = base_params ['fc1'],     
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                                           
                         verbose = verbose )
 
         self.hallucinated.add_layer ( type = "dot_product",
                         origin = "fc1-data",
                         id = "fc2-data",
-                        num_neurons = 1200,                    
+                        num_neurons = 1024,                    
                         activation = 'relu',
                         input_params = base_params ['fc2'],     
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                                                                   
                         verbose = verbose ) 
 
@@ -1345,7 +1345,7 @@ class igan (object):
         self.hallucinated.add_layer ( type = "unflatten",
                         id = "gan-input-unflattened",
                         origin ="gan-input",
-                        shape = (28,28),
+                        shape = (32,32,3),
                         verbose = verbose
                         )
 
@@ -1430,10 +1430,10 @@ class igan (object):
         self.hallucinated.add_layer ( type = "dot_product",
                         origin = "c6-gan",
                         id = "fc1-gan",
-                        num_neurons = 1200,
+                        num_neurons = 1024,
                         activation = 'relu',
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                        
                         input_params = self.hallucinated.dropout_layers['fc1-data'].params,                        
                         verbose = verbose )
@@ -1441,10 +1441,10 @@ class igan (object):
         self.hallucinated.add_layer ( type = "dot_product",
                         origin = "fc1-gan",
                         id = "fc2-gan",
-                        num_neurons = 1200,                    
+                        num_neurons = 1024,                    
                         activation = 'relu',
                         batch_norm= True,
-                        dropout_rate = 0.5,
+                        dropout_rate = 0.7,
                         regularize = True,                        
                         input_params = self.hallucinated.dropout_layers['fc2-data'].params,                                                  
                         verbose = verbose  )                         
@@ -1550,7 +1550,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,             
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 learning_rates = lr,               
                 verbose = verbose)
 
