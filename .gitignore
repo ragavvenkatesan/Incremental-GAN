@@ -4,8 +4,6 @@ visualizer
 writing
 mnist/records
 cifar10/records
-cifar10/cifar10-deep.py
-svhn
 *.png
 *.txt
 *.pyc
