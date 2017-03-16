@@ -1,5 +1,5 @@
 import sys, os
-from svhn_deep import igan
+from svhn import igan
 from dataset import cook_split_base as base_dataset
 
 if __name__ == '__main__':
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # setup and train site-1 Base MLP
     site1.setup_base_mlp(root = root, verbose = 2)    
     lr = (0.04, 0.01, 0.001 )    
-    epochs =(15, 10)
+    epochs =(15, 15)
     """site1.train_base_mlp ( lr =lr, 
                            save_after_epochs = 1,
                            epochs = epochs, 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
-    lr = (0.00005, 0.001, 0.0001)    
+    lr = (0.00004, 0.01, 0.01)    
     epochs =(20, 20)
     site1.train_init_gan ( lr = lr, 
                            save_after_epochs = 1,

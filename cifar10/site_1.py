@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
-    lr = (0.00005, 0.001, 0.0001)    
+    lr = (0.04, 0.01, 0.0001)    
     epochs =(20, 20)
     site1.train_init_gan ( lr = lr, 
                            save_after_epochs = 1,

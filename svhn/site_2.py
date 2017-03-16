@@ -1,5 +1,5 @@
 import sys, os
-from cifar10 import igan
+from svhn import igan
 from dataset import cook_split_inc as inc_dataset  
 from yann.utils.pickle import load
 
