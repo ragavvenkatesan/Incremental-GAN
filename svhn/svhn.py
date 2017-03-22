@@ -68,9 +68,9 @@ class igan (object):
 
         optimizer_params =  {        
                     "momentum_type"       : 'polyak',             
-                    "momentum_params"     : (0.51, 0.95, 40),      
+                    "momentum_params"     : (0.55, 0.9, 20),      
                     "regularization"      : (0.00001, 0.00001),       
-                    "optimizer_type"      : 'adagrad',                
+                    "optimizer_type"      : 'rmsprop',                
                     "id"                  : "main"
                             }
 
@@ -361,8 +361,8 @@ class igan (object):
         # objective layers 
         # discriminator objective 
         self.gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(x)'].output)) - \
-                                    0.5 * T.mean(T.log(1-self.gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(self.gan_net.layers['D(x)'].output - 1)) + \
+                                    0.5 * T.mean(T.sqr(self.gan_net.layers['D(G(z))'].output)),
                         input_shape = (1,),
                         id = "discriminator_task"
                         )
@@ -377,7 +377,7 @@ class igan (object):
                         )
         #generator objective 
         self.gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(self.gan_net.layers['D(G(z))'].output - 1)),
                         input_shape = (1,),
                         id = "objective_task"
                         )
@@ -405,6 +405,10 @@ class igan (object):
         # self.gan_net.pretty_print()
         
         if cook is True:
+            """self.gan_net.datastream['data'].batches2train = 10
+            self.gan_net.datastream['data'].batches2validate = 2
+            self.gan_net.datastream['data'].batches2test = 1"""
+
             self.gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                         optimizer_params = optimizer_params,
                         discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
@@ -428,10 +432,11 @@ class igan (object):
         if verbose >=2 :
             print ( ".. Training GAN ")  
 
+        print "k = 5"
         self.gan_net.train( epochs = epochs, 
-                k = 1, 
+                k = 5, 
                 learning_rates = lr,
-                pre_train_discriminator = 0,
+                pre_train_discriminator = 1,
                 validate_after_epochs = 10,
                 visualize_after_epochs = 1,
                 save_after_epochs = save_after_epochs,

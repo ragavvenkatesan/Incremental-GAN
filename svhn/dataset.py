@@ -24,6 +24,7 @@ def cook_svhn_complete(location, verbose = 1, **kwargs):
                    "channels"           : 3,
                    "batches2test"       : 13,
                    "batches2train"      : 100,
+                   "mini_batches_per_batch" : (10, 10, 10),
                    "batches2validate"   : 13,
                    "mini_batch_size"    : 500}
     else:
@@ -88,6 +89,7 @@ def cook_split_base(location, verbose = 1, **kwargs):
                    "channels"           : 3,
                    "batches2test"       : 13,
                    "batches2train"      : 100,
+                   "mini_batches_per_batch" : (10, 10, 10),                   
                    "batches2validate"   : 13,
                    "mini_batch_size"    : 500}
 
@@ -127,7 +129,7 @@ def cook_split_base(location, verbose = 1, **kwargs):
                             verbose = 3)
     return dataset
 
-def cook_split_inc(verbose = 1, **kwargs):
+def cook_split_inc(location, verbose = 1, **kwargs):
     """
     Wrapper to cook svhn dataset that also creates the rest of the dataset. Will take as input,
 
@@ -154,6 +156,7 @@ def cook_split_inc(verbose = 1, **kwargs):
                    "batches2test"       : 13,
                    "batches2train"      : 100,
                    "batches2validate"   : 13,
+                   "mini_batches_per_batch" : (10, 10, 10),                   
                    "mini_batch_size"    : 500}
 
     else:
