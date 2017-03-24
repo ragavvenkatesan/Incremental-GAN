@@ -18,8 +18,7 @@ def cook_svhn_complete(location, verbose = 1, **kwargs):
         data_params = {
                    "source"             : 'matlab',
                    # "name"               : 'yann_svhn', # some name.
-                   "location"     : location,    # some location to load from.  
-                   "height"             : 32,
+                   "location"     : location,    # some location to load from.                    "height"             : 32,
                    "width"              : 32,
                    "channels"           : 3,
                    "batches2test"       : 13,
@@ -87,8 +86,9 @@ def cook_split_base(location, verbose = 1, **kwargs):
                    "width"              : 32,
                    "channels"           : 3,
                    "batches2test"       : 13,
-                   "batches2train"      : 100,
+                   "batches2train"      : 2,
                    "batches2validate"   : 13,
+                   "mini_batches_per_batch" : (2, 10, 10),
                    "mini_batch_size"    : 500}
 
     else:

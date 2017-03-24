@@ -9,15 +9,15 @@ if __name__ == '__main__':
                     "shot"              : [6,7,8,9],
                     "p"                 : 0    }  
 
-    """data_loc = '/home/ASUAD/rvenka10/airlock'
-    # data_loc = '/Users/ragav/GitHub/yann_datasets/svhn'
+    # data_loc = '/home/ASUAD/rvenka10/airlock'
+    data_loc = '/Users/ragav/GitHub/yann_datasets/svhn'
     base = base_dataset (location = data_loc,
                           splits = base_splits, 
-                          verbose = 1) """
+                          verbose = 1)
     # base = base.dataset_location()
     # Data was once made and stored here. Uncomment the lines above
     # instead of the one below to newly make one.
-    base = '_datasets/_dataset_21282'  
+    # base = '_datasets/_dataset_21282'  
 
     # This will initialize the igan. Both MLP and GAN 
     # will be training with the base dataset.
