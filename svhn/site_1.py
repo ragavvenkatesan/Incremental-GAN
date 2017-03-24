@@ -9,15 +9,15 @@ if __name__ == '__main__':
                     "shot"              : [6,7,8,9],
                     "p"                 : 0    }  
 
-    # data_loc = '/home/ASUAD/rvenka10/airlock'
-    data_loc = '/Users/ragav/GitHub/yann_datasets/svhn'
+
+    """data_loc = '/home/ASUAD/rvenka10/airlock'
     base = base_dataset (location = data_loc,
                           splits = base_splits, 
                           verbose = 1)
-    # base = base.dataset_location()
+    base = base.dataset_location()"""
     # Data was once made and stored here. Uncomment the lines above
     # instead of the one below to newly make one.
-    # base = '_datasets/_dataset_21282'  
+    base = '_datasets/_dataset_12222'  
 
     # This will initialize the igan. Both MLP and GAN 
     # will be training with the base dataset.
@@ -29,19 +29,19 @@ if __name__ == '__main__':
     site1 = igan ( init_dataset = base, root = root, verbose = 1 )
 
     # setup and train site-1 Base MLP
-    site1.setup_base_mlp(root = root, verbose = 2)    
-    lr = (0.04, 0.01, 0.001 )    
-    epochs =(15, 15)
+    site1.setup_base_mlp(root = root, verbose = 1)    
+    lr = (0.04, 0.01 )    
+    epochs =(10)
     """site1.train_base_mlp ( lr =lr, 
                            save_after_epochs = 1,
                            epochs = epochs, 
-                           early_terminate = False,
-                           verbose = 2 )"""   
+                           early_terminate= False,
+                           verbose = 2 ) """ 
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
-    lr = (0.00004, 0.01, 0.01)    
-    epochs =(20, 20)
+    lr = (0.04, 0.0001)    
+    epochs =(20)
     site1.train_init_gan ( lr = lr, 
                            save_after_epochs = 1,
                            epochs = epochs,

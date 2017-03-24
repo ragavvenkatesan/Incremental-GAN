@@ -520,8 +520,8 @@ class igan (object):
         # objective layers 
         # discriminator objective 
         self.gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(x)'].output)) - \
-                                    0.5 * T.mean(T.log(1-self.gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(self.gan_net.layers['D(x)'].output - 1)) + \
+                                    0.5 * T.mean(T.sqr(1-self.gan_net.layers['D(G(z))'].output)),
                         input_shape = (1,),
                         id = "discriminator_task"
                         )
@@ -536,7 +536,7 @@ class igan (object):
                         )
         #generator objective 
         self.gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(self.gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(self.gan_net.layers['D(G(z))'].output - 1)),
                         input_shape = (1,),
                         id = "objective_task"
                         )
@@ -562,7 +562,9 @@ class igan (object):
         # from yann.utils.graph import draw_network
         # draw_network(net.graph, filename = 'gan.png')    
         # self.gan_net.pretty_print()
-        
+        self.batches2train = 10
+        self.batches2test = 2
+        self.batches2validate = 2
         if cook is True:
             self.gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                         optimizer_params = optimizer_params,
