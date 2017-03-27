@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # base = base_dataset (splits = base_splits, verbose = 1)
     # base = base.dataset_location()  
-    base = '_datasets/_dataset_81526'
+    base = '_datasets/_dataset_63616'
     # This will initialize the igan. Both MLP and GAN 
     # will be training with the base dataset.
     root = 'records/site_1'

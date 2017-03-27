@@ -1,4 +1,4 @@
-from yann.special.datasets import split_all, split_only_train, combine_split_datasets
+from yann.special.datasets import split_all, split_only_train
 
 def cook_cifar10_complete(verbose = 1, **kwargs):
     """
@@ -20,11 +20,11 @@ def cook_cifar10_complete(verbose = 1, **kwargs):
                    "source"             : 'skdata',
                    "name"               : 'cifar10',
                    "location"			: '',
-                   "mini_batch_size"    : 100,
-                   "mini_batches_per_batch" : (400, 100, 100),
-                   "batches2train"      : 1,
-                   "batches2test"       : 1,
-                   "batches2validate"   : 1,
+                   "mini_batch_size"    : 500,
+                   "mini_batches_per_batch" : (10, 10, 10),
+                   "batches2train"      : 8,
+                   "batches2test"       : 2,
+                   "batches2validate"   : 2,
                    "height"             : 32,
                    "width"              : 32,
                    "channels"           : 3  }
@@ -85,13 +85,13 @@ def cook_svhn_complete(verbose = 1, **kwargs):
                    "source"             : 'matlab',
                    "name"               : 'svhn',
                    "location"			: '/Users/ragav/GitHub/yann_datasets/svhn',
-                   "mini_batch_size"    : 100,
-                   "mini_batches_per_batch" : (100, 100, 100),
+                   "mini_batch_size"    : 500,
+                   "mini_batches_per_batch" : (10, 10, 10),
                    "height"             : 32,
                    "width"              : 32,
                    "channels"           : 3,
                    "batches2test"       : 13,
-                   "batches2train"      : 13,
+                   "batches2train"      : 10, # Could go up to 100
                    "batches2validate"   : 13,}
 
     else:
@@ -264,4 +264,4 @@ def cook_split_inc(verbose = 1, **kwargs):
 
 
 if __name__ == '__main__':
-    passs
+    pass
