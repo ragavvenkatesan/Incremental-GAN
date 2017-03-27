@@ -182,8 +182,8 @@ def cook_split_base(verbose = 1, **kwargs):
 
     if not 'splits' in  kwargs.keys():
         splits = { 
-                        "base"              : [0,1,2,3,4,5],
-                        "shot"              : [6,7,8,9],
+                        "base"              : [0,1,2,3,4,5,6,7,8,9],
+                        "shot"              : [],
                         "p"                 : 0
                     }     
     else:

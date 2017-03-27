@@ -5,13 +5,13 @@ from dataset import cook_split_base as base_dataset
 if __name__ == '__main__':
       
     # from dataset import cook_mnist_complete as base_dataset 
-    base_splits = { "base"              : [0,1,2,3,4,5],
-                    "shot"              : [6,7,8,9],
+    base_splits = { "base"              : [0,1,2,3,4,5,6,7,8,9],
+                    "shot"              : [],
                     "p"                 : 0    }  
 
-    # base = base_dataset (splits = base_splits, verbose = 1)
-    # base = base.dataset_location()  
-    base = '_datasets/_dataset_63616'
+    base = base_dataset (splits = base_splits, verbose = 1)
+    base = base.dataset_location()  
+    # base = '_datasets/_dataset_63616'
     # This will initialize the igan. Both MLP and GAN 
     # will be training with the base dataset.
     root = 'records/site_1'
