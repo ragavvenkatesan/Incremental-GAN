@@ -67,10 +67,10 @@ class igan (object):
             print (".. Creating a GAN network")
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.51, 0.95, 40),      
                     "regularization"      : (0.00001, 0.00001),       
-                    "optimizer_type"      : 'adagrad',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "main"
                             }
 
