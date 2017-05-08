@@ -31,4 +31,4 @@ if __name__ == '__main__':
     site1.setup_gan(root = root, verbose = 1)
     lr = (0.00004, 0.004)
     epochs =(40)
-    # site1.train_init_gan ( lr = lr, save_after_epochs = 1, epochs = epochs, verbose = 2 )
+    site1.train_init_gan ( lr = lr, save_after_epochs = 1, epochs = epochs, verbose = 2 )

@@ -29,12 +29,12 @@ if __name__ == '__main__':
                            save_after_epochs = 1,
                            epochs = epochs, 
                            early_terminate = False,
-                           verbose = 2 )   
+                           verbose = 2 ) 
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
-    lr = (0.04, 0.01, 0.0001)    
-    epochs =(20, 20)
+    lr = (0.04, 0.001)    
+    epochs =(5)
     site1.train_init_gan ( lr = lr, 
                            save_after_epochs = 1,
                            epochs = epochs,

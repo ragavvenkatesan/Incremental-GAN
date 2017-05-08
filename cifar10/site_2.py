@@ -6,7 +6,7 @@ from yann.utils.pickle import load
 if __name__ == '__main__':
     
     # simply locations
-    gan = 39   # which epoch of gan do you want transfer to site 2 ?    
+    gan = 4   # which epoch of gan do you want transfer to site 2 ?    
     site_1_root = 'records/site_1'
     root = 'records/site_2/gan_' + str(gan)
     if not os.path.exists(root):

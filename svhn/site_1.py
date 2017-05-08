@@ -10,11 +10,13 @@ if __name__ == '__main__':
                     "p"                 : 0    }  
 
 
-    """data_loc = '/home/ASUAD/rvenka10/airlock'
+    data_loc = '/home/ASUAD/rvenka10/airlock' # this is where you will add the matlab
+                                            # data files as processed from the 
+                                            # tutorial.
     base = base_dataset (location = data_loc,
                           splits = base_splits, 
                           verbose = 1)
-    base = base.dataset_location()"""
+    base = base.dataset_location()
     # Data was once made and stored here. Uncomment the lines above
     # instead of the one below to newly make one.
     base = '_datasets/_dataset_12222'  
@@ -40,6 +42,7 @@ if __name__ == '__main__':
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
+    
     lr = (0.04, 0.0001)    
     epochs =(20)
     site1.train_init_gan ( lr = lr, 
