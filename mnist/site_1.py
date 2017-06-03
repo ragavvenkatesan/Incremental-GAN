@@ -23,12 +23,12 @@ if __name__ == '__main__':
 
     # setup and train site-1 Base MLP
     site1.setup_base_mlp(root = root, verbose = 1)    
-    lr = (0.00005, 0.01, 0.00001)    
-    epochs =(20, 20)
-    site1.train_base_mlp ( lr =lr, save_after_epochs = 1, epochs = epochs, verbose = 2 )    
+    lr = (0.00005, 0.00001)    
+    epochs =(100)
+    # site1.train_base_mlp ( lr =lr, save_after_epochs = 1, epochs = epochs, verbose = 2 )    
 
     # setup and train site-2 GAN
     site1.setup_gan(root = root, verbose = 1)
-    lr = (0.00004, 0.004)
-    epochs =(40)
+    lr = (0.00005, 0.001, 0.0001)    
+    epochs =(14, 14)
     site1.train_init_gan ( lr = lr, save_after_epochs = 1, epochs = epochs, verbose = 2 )

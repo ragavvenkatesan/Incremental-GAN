@@ -6,14 +6,15 @@ from yann.utils.pickle import load
 if __name__ == '__main__':
     
     # simply locations
-    gan = 39   # which epoch of gan do you want transfer to site 2 ?    
+    gan = 27   # which epoch of gan do you want transfer to site 2 ?    
     site_1_root = 'records/site_1'
     root = 'records/site_2/gan_' + str(gan)
     if not os.path.exists(root):
         os.makedirs(root)           
 
     lr = (0.00005, 0.01, 0.0001)    
-    epochs =(10, 10)
+    epochs =(20, 20)
+
     p_vals = [0, 10, 50, 100, 500, 1000, 2500, 4700]
 
     # setup incremental dataset parameters dataset.

@@ -1,6 +1,6 @@
 This is the code for the paper:
 
-Ragav Venkatesan, Hemanth Venkateshwara, Sethuraman Panchanathan, Baoxin Li "A strategy for an uncompromising incremental learner" 2017.
+[Ragav Venkatesan](http://www.ragav.net), Hemanth Venkateshwara, Sethuraman Panchanathan, Baoxin Li "[A strategy for an uncompromising incremental learner](https://arxiv.org/abs/1705.00744)"arXiv:1705.00744, 2017.
 
 How to run the code
 -------------------

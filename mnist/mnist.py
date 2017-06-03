@@ -64,8 +64,8 @@ class igan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
-                    "momentum_params"     : (0.5, 0.7, 20),      
+                    "momentum_type"       : 'nesterov',             
+                    "momentum_params"     : (0.65, 0.7, 15),      
                     "regularization"      : (0.000, 0.000),       
                     "optimizer_type"      : 'rmsprop',                
                     "id"                  : "main"
@@ -343,7 +343,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 verbose = verbose)
 
     def setup_base_mlp (self, 
@@ -372,10 +372,10 @@ class igan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-base"
                             }
 
@@ -538,7 +538,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,                          
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 learning_rates = lr,               
                 verbose = verbose)
 
@@ -740,7 +740,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 learning_rates = lr,               
                 verbose = verbose)
 
@@ -1187,7 +1187,7 @@ class igan (object):
                 save_after_epochs = save_after_epochs,             
                 training_accuracy = True,
                 show_progress = True,
-                early_terminate = True,
+                early_terminate = False,
                 learning_rates = lr,               
                 verbose = verbose)
 
