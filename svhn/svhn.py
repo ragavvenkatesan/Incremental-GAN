@@ -67,10 +67,10 @@ class igan (object):
             print (".. Creating a GAN network")
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.55, 0.9, 20),      
                     "regularization"      : (0.00001, 0.00001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "main"
                             }
 
@@ -182,19 +182,36 @@ class igan (object):
                         )
 
         if not params is None:
-            input_params = params['G(z)']
+            input_params = params['G4']                        
         self.gan_net.add_layer ( type = "deconv",
                         origin = "G3",
-                        id = "G(z)",
+                        id = "G4",
                         num_neurons = 32,
-                        filter_size = (5,5),
+                        filter_size = (3,3),
+                        output_shape = (30,30,64),
+                        activation = 'relu',
+                        regularize = regularize,    
+                        batch_norm = batch_norm,
+                        input_params = input_params,
+                        stride = (1,1),
+                        verbose = verbose
+                        )
+
+        if not params is None:
+            input_params = params['G(z)']
+        self.gan_net.add_layer ( type = "deconv",
+                        origin = "G4",
+                        id = "G(z)",
+                        num_neurons = 64,
+                        filter_size = (3,3),
                         output_shape = (32,32,3),
                         activation = 'tanh',
-                        # regularize = regularize,    
+                        regularize = regularize,    
                         stride = (1,1),
                         input_params = input_params,
                         verbose = verbose
                         )
+        
         
         #x - inputs come from dataset 1 X 3072
         self.gan_net.add_layer ( type = "input",
@@ -412,7 +429,7 @@ class igan (object):
             self.gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
                         optimizer_params = optimizer_params,
                         discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
-                        generator_layers = ["G1","G2","G3","G(z)"], 
+                        generator_layers = ["G1","G2","G3", "G4", "G(z)"], 
                         classifier_layers = ["D1-x", "D2-x","D3-x","D4-x","softmax"],                                                
                         softmax_layer = "softmax",
                         game_layers = ("D(x)", "D(G(z))"),
@@ -472,10 +489,10 @@ class igan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-base"
                             }
 
@@ -727,10 +744,10 @@ class igan (object):
         self.data_splits = data_params ['splits']
         self.inc_num_classes = len(self.data_splits ['shot']) + len( self.data_splits ['base'] )
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-baseline"
                             }
 
@@ -1136,10 +1153,10 @@ class igan (object):
         f.close()        
         self.data_splits = data_params ['splits']
         optimizer_params =  {
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-hallucinated"
                             }
 

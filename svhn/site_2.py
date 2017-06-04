@@ -13,8 +13,8 @@ if __name__ == '__main__':
     if not os.path.exists(root):
         os.makedirs(root)           
 
-    lr = (0.00005, 0.01, 0.001)    
-    epochs =(10, 10)
+    lr = (0.04, 0.001, 0.0001)    
+    epochs =(30, 15)
     #p_vals = [0, 10, 50, 100, 500, 2000]
     p_vals = [ 5000, 10000, 25000]
     # p_vals = [ 35000, 45000, 60000]

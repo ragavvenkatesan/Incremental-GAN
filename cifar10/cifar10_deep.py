@@ -35,8 +35,8 @@ class igan (object):
                     cook = True, 
                     root = '.', verbose = 1 ):
         """
-        This function is a demo example of a generative adversarial network. 
-        This is an example code. You should study this code rather than merely run it.  
+
+        GAN
 
         Args: 
             dataset: Supply a dataset.    
@@ -47,12 +47,6 @@ class igan (object):
 
         Returns:
             net: A Network object.
-
-        Notes:
-            This is not setup properly therefore does not learn at the moment. This network here mimics
-            Ian Goodfellow's original code and implementation for MNIST adapted from his source code:
-            https://github.com/goodfeli/adversarial/blob/master/mnist.yaml .It might not be a perfect 
-            replicaiton, but I tried as best as I could.
 
         """
         if dataset is None:
@@ -67,10 +61,10 @@ class igan (object):
             print (".. Creating a GAN network")
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.55, 0.95, 40),      
                     "regularization"      : (0.00001, 0.00001),       
-                    "optimizer_type"      : 'adagrad',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "main"
                             }
 
@@ -625,10 +619,10 @@ class igan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-base"
                             }
 
@@ -880,10 +874,10 @@ class igan (object):
         self.data_splits = data_params ['splits']
         self.inc_num_classes = len(self.data_splits ['shot']) + len( self.data_splits ['base'] )
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-baseline"
                             }
 
@@ -1289,10 +1283,10 @@ class igan (object):
         f.close()        
         self.data_splits = data_params ['splits']
         optimizer_params =  {
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-hallucinated"
                             }
 

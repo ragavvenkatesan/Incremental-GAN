@@ -67,10 +67,10 @@ class igan (object):
             print (".. Creating a GAN network")
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.55, 0.95, 40),      
                     "regularization"      : (0.00001, 0.00001),       
-                    "optimizer_type"      : 'adagrad',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "main"
                             }
 
@@ -608,9 +608,7 @@ class igan (object):
                         cook = True,
                         verbose = 1 ):
         """
-        This method is the same as the  tutorial on building a two layer multi-layer neural
-        network. The built network is mnist->1200->1200->10 .It optimizes with polyak momentum and 
-        rmsprop. 
+        MLP
 
         Args:
             root: save location for data
@@ -627,10 +625,10 @@ class igan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-base"
                             }
 
@@ -882,10 +880,10 @@ class igan (object):
         self.data_splits = data_params ['splits']
         self.inc_num_classes = len(self.data_splits ['shot']) + len( self.data_splits ['base'] )
         optimizer_params =  {        
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-baseline"
                             }
 
@@ -1291,10 +1289,10 @@ class igan (object):
         f.close()        
         self.data_splits = data_params ['splits']
         optimizer_params =  {
-                    "momentum_type"       : 'polyak',             
+                    "momentum_type"       : 'false',             
                     "momentum_params"     : (0.65, 0.9, 30),      
                     "regularization"      : (0.0001, 0.0001),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "optim-inc-hallucinated"
                             }
 

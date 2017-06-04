@@ -91,7 +91,6 @@ def cook_split_base(location, verbose = 1, **kwargs):
                    "batches2train"      : 100,
                    "mini_batches_per_batch" : (10, 10, 10),                   
                    "batches2validate"   : 13,
-                   "mini_batches_per_batch" : (2, 10, 10),
                    "mini_batch_size"    : 500}
 
     else:

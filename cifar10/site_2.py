@@ -6,16 +6,19 @@ from yann.utils.pickle import load
 if __name__ == '__main__':
     
     # simply locations
-    gan = 4   # which epoch of gan do you want transfer to site 2 ?    
+    gan = 16   # which epoch of gan do you want transfer to site 2 ?    
+                # Check the generated images and pick a good one. 
     site_1_root = 'records/site_1'
     root = 'records/site_2/gan_' + str(gan)
     if not os.path.exists(root):
         os.makedirs(root)           
 
-    lr = (0.00005, 0.01, 0.001, 1e-4, 1e-5)    
-    epochs =(15, 15, 10, 10)
+    lr = (0.04, 0.001, 0.0001)    
+    epochs =(30, 15)
+
     p_vals = [0, 10, 50, 100, 500, 2000]
-    temperature = 8
+    temperature = 8 # High temperature for CIFAR 10.
+
     # setup incremental dataset parameters dataset.
     temp_splits = { "shot"               : [6,7,8,9],
                     "base"               : [0,1,2,3,4,5],    
@@ -24,6 +27,7 @@ if __name__ == '__main__':
     temp_base_data = inc_dataset (splits = temp_splits, 
                                     location = '/home/ASUAD/rvenka10/airlock', 
                                         verbose = 1)
+
     temp_base_data = temp_base_data.dataset_location()  
     site2 = igan ( init_dataset = temp_base_data, root = root, verbose = 1 )
 
@@ -65,7 +69,7 @@ if __name__ == '__main__':
             os.makedirs(root + '/p_' + str(p))
         baseline_root = root + '/p_' + str(p) + '/baseline'
         site2.setup_baseline_inc ( dataset = inc, root = baseline_root, verbose = 1 )
-        site2.train_baseline_inc ( lr =lr, epochs = epochs, verbose = 2 )
+        """site2.train_baseline_inc ( lr =lr, epochs = epochs, verbose = 2 )"""
 
         # This will initialize and train the hallucinated incremental network.
         # This network is intended to deomonstrate that hallucinating from GAN 
