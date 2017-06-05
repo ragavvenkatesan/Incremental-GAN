@@ -6,18 +6,18 @@ from yann.utils.pickle import load
 if __name__ == '__main__':
     
     # simply locations
-    gan = 39   # which epoch of gan do you want transfer to site 2 ?    
+    gan = 29   # which epoch of gan do you want transfer to site 2 ?    
     site_1_root = 'records/site_1'
     root = 'records/site_2/gan_' + str(gan)
-    data_loc = '/home/ASUAD/rvenka10/airlock'    
+    data_loc = '/home/local/ASUAD/rvenka10/Dropbox/svhn/' # this is where you will add the matlab
+
     if not os.path.exists(root):
         os.makedirs(root)           
 
     lr = (0.04, 0.001, 0.0001)    
     epochs =(30, 15)
     #p_vals = [0, 10, 50, 100, 500, 2000]
-    p_vals = [ 5000, 10000, 25000]
-    # p_vals = [ 35000, 45000, 60000]
+    p_vals = [ 0, 5000, 10000, 25000, 35000, 45000, 60000]
     temperature = 3
     temp_data_params = {
                "source"             : 'matlab',
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     site2 = igan ( init_dataset = temp_base_data, root = root, verbose = 1 )
 
     print (". Setup transfered gan network from site 1.")
-    gan_params = load(site_1_root + '/resultor/gan/params/gan-5-31.pkl')
+    gan_params = load(site_1_root + '/resultor/gan/params/epoch_' + str(gan) +'.pkl')
     site2.setup_gan(dataset = temp_base_data,
                     root = root, 
                     params = gan_params, 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                     verbose = 1)
 
     print (". Setup transfered base network from site 1.")    
-    base_params = load(site_1_root + '/resultor/base-network/params/epoch_9.pkl') 
+    base_params = load(site_1_root + '/resultor/base-network/params/epoch_14.pkl') 
     site2.setup_base_mlp(   dataset = temp_base_data, 
                             root = root, 
                             params = base_params, 
