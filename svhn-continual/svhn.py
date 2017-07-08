@@ -71,10 +71,10 @@ class cgan (object):
         input_params = None
 
         optimizer_params =  {        
-                    "momentum_type"       : 'nesterov',             
-                    "momentum_params"     : (0.65, 0.7, 15),      
-                    "regularization"      : (0.000, 0.000),       
-                    "optimizer_type"      : 'rmsprop',                
+                    "momentum_type"       : 'false',             
+                    "momentum_params"     : (0.55, 0.9, 20),      
+                    "regularization"      : (0.00001, 0.00001),       
+                    "optimizer_type"      : 'adam',                
                     "id"                  : "main"
                             }
 
@@ -86,22 +86,27 @@ class cgan (object):
                         }
 
         visualizer_params = {
-                        "root"       : root + '/visualizer/gan_' + str(self.increment),
+                        "root"       : root + '/visualizer/gan',
                         "frequency"  : 1,
                         "sample_size": 225,
-                        "rgb_filters": False,
+                        "rgb_filters": True,
                         "debug_functions" : False,
-                        "debug_layers": True,  
+                        "debug_layers": False,  
                         "id"         : 'main'
                             }  
-                        
+
         resultor_params    =    {
-                    "root"      : root + "/resultor/gan_" + str(self.increment),
+                    "root"      : root + "/resultor/gan",
                     "id"        : "resultor"
                                 }     
 
+
+        regularize = True
+        batch_norm = True
+        dropout_rate = 0.5        
         # intitialize the network
-        gan_net = gan ( borrow = True, verbose = verbose )                       
+        gan_net = gan (      borrow = True,
+                        verbose = verbose )                       
         
         gan_net.add_module ( type = 'datastream', 
                         params = dataset_params,
@@ -116,19 +121,103 @@ class cgan (object):
                         params = resultor_params,
                         verbose = verbose 
                         ) 
-        self.gan_mini_batch_size = gan_net.datastream['data'].mini_batch_size
+        self.mini_batch_size = gan_net.datastream['data'].mini_batch_size
         
         #z - latent space created by random layer
         gan_net.add_layer(type = 'random',
                             id = 'z',
-                            num_neurons = (self.gan_mini_batch_size,10), 
-                            distribution = 'gaussian',
+                            num_neurons = (self.mini_batch_size,32), 
+                            distribution = 'normal',
                             mu = 0,
                             sigma = 1,
                             # limits = (0,1),
                             verbose = verbose)
+
+        # Generator layers
+        if not params is None:
+            input_params = params['G1']
+
+        gan_net.add_layer ( type = "dot_product",
+                        origin = "z",
+                        id = "G1",
+                        num_neurons = 1200,
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,
+                        input_params = input_params,
+                        verbose = verbose
+                        ) 
+
+        if not params is None:
+            input_params = params['G2']
+        gan_net.add_layer ( type = "dot_product",
+                        origin = "G1",
+                        id = "G2",
+                        num_neurons = 5408,
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,
+                        input_params = input_params,
+                        verbose = verbose
+                        )
+
+        gan_net.add_layer ( type = "unflatten",
+                        origin = "G2",
+                        id = "G2-unflatten",
+                        shape = (13, 13, 32),
+                        batch_norm = batch_norm,
+                        verbose = verbose
+                        )
+
+        if not params is None:
+            input_params = params['G3']
+        gan_net.add_layer ( type = "deconv",
+                        origin = "G2-unflatten",
+                        id = "G3",
+                        num_neurons = 32,
+                        filter_size = (3,3),
+                        output_shape = (28,28,32),
+                        activation = 'relu',
+                        regularize = regularize,    
+                        batch_norm = batch_norm,
+                        input_params = input_params,
+                        stride = (2,2),
+                        verbose = verbose
+                        )
+
+        if not params is None:
+            input_params = params['G4']                        
+        gan_net.add_layer ( type = "deconv",
+                        origin = "G3",
+                        id = "G4",
+                        num_neurons = 32,
+                        filter_size = (3,3),
+                        output_shape = (30,30,64),
+                        activation = 'relu',
+                        regularize = regularize,    
+                        batch_norm = batch_norm,
+                        input_params = input_params,
+                        stride = (1,1),
+                        verbose = verbose
+                        )
+
+        if not params is None:
+            input_params = params['G(z)']
+        gan_net.add_layer ( type = "deconv",
+                        origin = "G4",
+                        id = "G(z)",
+                        num_neurons = 64,
+                        filter_size = (3,3),
+                        output_shape = (32,32,3),
+                        activation = 'tanh',
+                        regularize = regularize,    
+                        stride = (1,1),
+                        input_params = input_params,
+                        verbose = verbose
+                        )
         
-        #x - inputs come from dataset 1 X 784\
+        
+        #x - inputs come from dataset 1 X 3072
         gan_net.add_layer ( type = "input",
                         id = "x",
                         verbose = verbose, 
@@ -136,133 +225,156 @@ class cgan (object):
                                                     # the time. 
                         mean_subtract = False )
 
-        # Generator layers
-        if not params is None:
-            input_params = params ['G1']
-
-        gan_net.add_layer ( type = "dot_product",
-                        origin = "z",
-                        id = "G1",
-                        num_neurons = 1200,
-                        activation = 'relu',
-                        # batch_norm   = True,
-                        input_params = input_params,
-                        verbose = verbose
-                        ) 
-
-        if not params is None:
-            input_params = params ['G2']
-
-        gan_net.add_layer ( type = "dot_product",
-                        origin = "G1",
-                        id = "G2",
-                        num_neurons = 1200,
-                        activation = 'relu',
-                        # batch_norm   = True,
-                        input_params = input_params,
-                        verbose = verbose
-                        )
-
-        if not params is None:
-            input_params = params ['G(z)']
-
-        gan_net.add_layer ( type = "dot_product",
-                        origin = "G2",
-                        id = "G(z)",
-                        num_neurons = 784,
-                        activation = 'tanh',
-                        input_params = input_params,
-                        verbose = verbose
-                        )  # This layer is the one that creates the images.
-            
-        # D(x) - Contains params theta_d creates features 1 X 800. 
+        #D(x) - Contains params theta_d creates features 1 X 800. 
         # Discriminator Layers
-        gan_net.add_layer ( type = "unflatten",
-                        origin = "G(z)",
-                        id = "G(z)-unflattened",
-                        shape = (28,28),
-                        verbose = verbose )
-
+        # add first convolutional layer
         if not params is None:
-            input_params = params ['D1-x']
-        gan_net.add_layer ( type = "dot_product",
-                        id = "D1-x",
+            input_params = params['D1-x']
+        gan_net.add_layer ( type = "conv_pool",
                         origin = "x",
-                        num_neurons = 1200,
-                        activation = ('maxout','maxout',5),
-                        regularize = True,  
-                        # batch_norm  = True,
-                        # dropout_rate = 0.5,    
-                        input_params = input_params,                                                   
+                        id = "D1-x",
+                        num_neurons = 20,
+                        filter_size = (5,5),
+                        pool_size = (2,2),
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,   
+                        input_params = input_params,                 
                         verbose = verbose
                         )
 
-        gan_net.add_layer ( type = "dot_product",
+        gan_net.add_layer ( type = "conv_pool",
+                        origin = "G(z)",
                         id = "D1-z",
-                        origin = "G(z)-unflattened",
-                        input_params = gan_net.dropout_layers["D1-x"].params, 
-                        num_neurons = 1200,
-                        activation = ('maxout','maxout',5),
-                        regularize = True,
-                        # batch_norm  = True,
-                        # dropout_rate = 0.5,                       
+                        num_neurons = 20,
+                        filter_size = (5,5),
+                        pool_size = (2,2),
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,
+                        input_params = gan_net.dropout_layers["D1-x"].params,
                         verbose = verbose
                         )
-
+        
         if not params is None:
-            input_params = params ['D2-x']
-        gan_net.add_layer ( type = "dot_product",
-                        id = "D2-x",
+            input_params = params['D2-x']        
+        gan_net.add_layer ( type = "conv_pool",
                         origin = "D1-x",
+                        id = "D2-x",
+                        num_neurons = 50,
+                        filter_size = (3,3),
+                        pool_size = (2,2),
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,  
+                        input_params = input_params,                  
+                        verbose = verbose
+                        )      
+
+        gan_net.add_layer ( type = "conv_pool",
+                        origin = "D1-z",
+                        # origin = "G(z)",
+                        id = "D2-z",
+                        num_neurons = 50,
+                        filter_size = (3,3),
+                        pool_size = (2,2),
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,                    
+                        input_params = gan_net.dropout_layers["D2-x"].params,
+                        verbose = verbose
+                        )      
+
+
+        if not params is None:
+            input_params = params['D3-x']
+        gan_net.add_layer ( type = "dot_product",
+                        id = "D3-x",
+                        origin = "D2-x",
                         num_neurons = 1200,
-                        activation = ('maxout','maxout',5),
-                        regularize = True,       
-                        # batch_norm  = True,
-                        # dropout_rate = 0.5,     
-                        input_params = input_params,                                                                    
+                        activation = 'relu',
+                        regularize = regularize,  
+                        batch_norm = batch_norm,
+                        dropout_rate = dropout_rate, 
+                        input_params = input_params,                                                      
                         verbose = verbose
                         )
 
         gan_net.add_layer ( type = "dot_product",
-                        id = "D2-z",
-                        origin = "D1-z",
-                        input_params = gan_net.dropout_layers["D2-x"].params, 
+                        id = "D3-z",
+                        origin = "D2-z",
+                        input_params = gan_net.dropout_layers["D3-x"].params, 
                         num_neurons = 1200,
-                        activation = ('maxout','maxout',5),
-                        regularize = True,
-                        # dropout_rate = 0.5,          
-                        # batch_norm  = True,                    
+                        activation = 'relu',
+                        regularize = regularize,
+                        batch_norm = batch_norm,
+                        dropout_rate = dropout_rate,                       
                         verbose = verbose
                         )
 
+
         if not params is None:
-            input_params = params ['D(x)']
+            input_params = params['D4-x']
+        gan_net.add_layer ( type = "dot_product",
+                        id = "D4-x",
+                        origin = "D3-x",
+                        num_neurons = 1200,
+                        activation = 'relu',
+                        regularize = regularize,       
+                        batch_norm = batch_norm,
+                        dropout_rate = dropout_rate,   
+                        input_params = input_params,                                                                      
+                        verbose = verbose
+                        )
+
+        gan_net.add_layer ( type = "dot_product",
+                        id = "D4-z",
+                        origin = "D3-z",
+                        input_params = gan_net.dropout_layers["D4-x"].params, 
+                        num_neurons = 1200,
+                        activation = 'relu',
+                        regularize = regularize,
+                        dropout_rate = dropout_rate,          
+                        batch_norm = batch_norm,                    
+                        verbose = verbose
+                        )
+
         #C(D(x)) - This is the opposite of C(D(G(z))), real
+
+        if not params is None:
+            input_params = params['D(x)']        
         gan_net.add_layer ( type = "dot_product",
                         id = "D(x)",
-                        origin = "D2-x",
+                        origin = "D4-x",
                         num_neurons = 1,
                         activation = 'sigmoid',
+                        regularize = regularize,
+                        input_params = input_params,
                         verbose = verbose
                         )
 
         #C(D(G(z))) fake - the classifier for fake/real that always predicts fake 
         gan_net.add_layer ( type = "dot_product",
                         id = "D(G(z))",
-                        origin = "D2-z",
+                        origin = "D4-z",
                         num_neurons = 1,
                         activation = 'sigmoid',
+                        regularize = regularize,
                         input_params = gan_net.dropout_layers["D(x)"].params,                   
                         verbose = verbose
                         )
 
-        if not params is None:
-            input_params = params ['softmax']        
+        
         #C(D(x)) - This is the opposite of C(D(G(z))), real
+
+        if not params is None:
+            input_params = params['softmax']        
         gan_net.add_layer ( type = "classifier",
                         id = "softmax",
-                        origin = "D2-x",
-                        num_classes = self.num_classes,
+                        origin = "D4-x",
+                        num_classes = 10,
+                        regularize = regularize,
+                        input_params = input_params,
                         activation = 'softmax',
                         verbose = verbose
                     )
@@ -270,11 +382,10 @@ class cgan (object):
         # objective layers 
         # discriminator objective 
         gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(gan_net.layers['D(x)'].output)) - \
-                                    0.5 * T.mean(T.log(1-gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(gan_net.layers['D(x)'].output - 1)) + \
+                                    0.5 * T.mean(T.sqr(gan_net.layers['D(G(z))'].output)),
                         input_shape = (1,),
-                        id = "discriminator_task",
-                        verbose = verbose                        
+                        id = "discriminator_task"
                         )
 
         gan_net.add_layer ( type = "objective",
@@ -285,15 +396,12 @@ class cgan (object):
                         datastream_origin = 'data', 
                         verbose = verbose
                         )
-
         #generator objective 
         gan_net.add_layer (type = "tensor",
-                        input =  - 0.5 * T.mean(T.log(gan_net.layers['D(G(z))'].output)),
+                        input =  0.5 * T.mean(T.sqr(gan_net.layers['D(G(z))'].output - 1)),
                         input_shape = (1,),
-                        id = "objective_task",
-                        verbose = verbose
+                        id = "objective_task"
                         )
-
         gan_net.add_layer ( type = "objective",
                         id = "generator_obj",
                         layer_type = 'value',
@@ -314,19 +422,22 @@ class cgan (object):
                         )
         
         # from yann.utils.graph import draw_network
-        # draw_network(self.gan_net.graph, filename = 'gan.png')    
-        # self.gan_net.pretty_print()
+        # draw_network(net.graph, filename = 'gan.png')    
+        # gan_net.pretty_print()
         
         if cook is True:
-            gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", \
-                                                                                "generator_obj"],
-                                optimizer_params = optimizer_params,
-                                discriminator_layers = ["D1-x","D2-x"],
-                                generator_layers = ["G1","G2","G(z)"], 
-                                classifier_layers = ["D1-x","D2-x","softmax"],                                                
-                                softmax_layer = "softmax",
-                                game_layers = ("D(x)", "D(G(z))"),
-                                verbose = verbose )   
+            """gan_net.datastream['data'].batches2train = 10
+            gan_net.datastream['data'].batches2validate = 2
+            gan_net.datastream['data'].batches2test = 1"""
+
+            gan_net.cook (  objective_layers = ["classifier_obj", "discriminator_obj", "generator_obj"],
+                        optimizer_params = optimizer_params,
+                        discriminator_layers = ["D1-x", "D2-x","D3-x","D4-x"],
+                        generator_layers = ["G1","G2","G3", "G4", "G(z)"], 
+                        classifier_layers = ["D1-x", "D2-x","D3-x","D4-x","softmax"],                                                
+                        softmax_layer = "softmax",
+                        game_layers = ("D(x)", "D(G(z))"),
+                        verbose = verbose )
         return gan_net     
 
     def _mlp (  self, 
@@ -378,7 +489,7 @@ class cgan (object):
                         "root"       : root + '/visualizer/network-' + id,
                         "frequency"  : 1,
                         "sample_size": 225,
-                        "rgb_filters": False,
+                        "rgb_filters": True,
                         "debug_functions" : False,
                         "debug_layers": False,  
                         "id"         : 'visualizer'
@@ -493,7 +604,7 @@ class cgan (object):
                         )
 
         # self.base.pretty_print()
-        # draw_network(self.gan_net.graph, filename = 'base.png')    
+        # draw_network(gan_net.graph, filename = 'base.png')    
         if cook is True:
             net.cook( optimizer = 'optim',
                     objective_layers = ['obj'],
@@ -658,13 +769,13 @@ class cgan (object):
             self.phantom_labeler.add_layer ( type = "tensor",
                             id = "input-" + str(inc),
                             input = self.gans[inc].dropout_layers['G(z)'].output,
-                            input_shape = (self.mini_batch_size,784),
+                            input_shape = (self.mini_batch_size,3072),
                             verbose = verbose )
  
             self.phantom_labeler.add_layer ( type = "unflatten",
                             id = "input-unflattened-" + str(inc),
                             origin = "input-" + str(inc),
-                            shape = (28,28),
+                            shape = (32,32,3),
                             verbose = verbose
                             )
         
@@ -808,7 +919,7 @@ class cgan (object):
             self.current.add_layer ( type = "unflatten",
                             id = "gan-input-unflattened-" + str(inc),
                             origin ="gan-input-" + str(inc),
-                            shape = (28,28),
+                            shape = (32,32),
                             verbose = verbose
                             )
 
