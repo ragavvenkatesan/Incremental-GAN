@@ -1,6 +1,7 @@
 from yann.special.gan import gan 
 from yann.network import network
 from yann.utils.graph import draw_network
+from yann.utils.pickle import shared_params
 
 from collections import OrderedDict
 from theano import tensor as T 
@@ -366,7 +367,7 @@ class cgan (object):
         self.gans[self.increment] = gan_net 
         self.increment += 1  
 
-    def train_gan ( self, lr = (0.04, 0.001), 
+    def train_gan ( self, gan = None, lr = (0.04, 0.001), 
                     save_after_epochs = 1, epochs= (15), verbose = 2):
         """
         This method will train the initial GAN on base dataset. 
@@ -377,11 +378,13 @@ class cgan (object):
             save_after_epochs: Saves the network down after so many epochs.
             verbose : As usual.
         """  
- 
-        if verbose >=2 :
-            print ( ".. Training GAN " + str(self.increment) )  
 
-        self.gans[self.increment-1].train( epochs = epochs, 
+        if gan is None:
+            gan = self.gans[self.increment - 1]
+        if verbose >=2 :
+            print ( ".. Training GAN " )  
+
+        gan.train( epochs = epochs, 
                 k = 1, 
                 learning_rates = lr,
                 pre_train_discriminator = 0,
@@ -445,12 +448,12 @@ class cgan (object):
                         "rgb_filters": False,
                         "debug_functions" : False,
                         "debug_layers": False,  
-                        "id"         : 'visualizer-base'
+                        "id"         : 'visualizer'
                             }                          
 
         resultor_params    =    {
                     "root"      : root + "/resultor/network-" + id,
-                    "id"        : "resultor-base"
+                    "id"        : "resultor"
                                 }     
 
         net = network(   borrow = True,
@@ -551,7 +554,7 @@ class cgan (object):
                         )                  
 
         net.add_layer ( type = "objective",
-                        id = "obj-base",
+                        id = "obj",
                         origin = "softmax",
                         verbose = verbose
                         )
@@ -560,9 +563,9 @@ class cgan (object):
         # draw_network(self.gan_net.graph, filename = 'base.png')    
         if cook is True:
             net.cook( optimizer = 'optim',
-                    objective_layers = ['obj-base'],
+                    objective_layers = ['obj'],
                     datastream = 'data',
-                    classifier = 'softmax-base',
+                    classifier = 'softmax',
                     verbose = verbose
                     )
         return net
@@ -637,16 +640,16 @@ class cgan (object):
 
         if not temperature is None:
             self.temperature = temperature
-            
+
+        # Every layer should have increment number of layers.  But the same 
+        # parameters are shared. So it is in effect just one layer.            
         for inc in xrange(len(self.gans.keys())):
             self.phantom_labeler.add_layer ( type = "tensor",
                             id = "input-" + str(inc),
                             input = self.gans[inc].dropout_layers['G(z)'].output,
                             input_shape = (self.mini_batch_size,784),
                             verbose = verbose )
-
-        # Every layer should have increment number of layers.  But the same 
-        # parameters are shared. So it is in effect just one layer. 
+ 
             self.phantom_labeler.add_layer ( type = "unflatten",
                             id = "input-unflattened-" + str(inc),
                             origin = "input-" + str(inc),
@@ -715,7 +718,7 @@ class cgan (object):
                             )
 
             self.phantom_labeler.add_layer ( type = "classifier",
-                            id = "softmax-base-temperature-" + str(inc),
+                            id = "phantom-" + str(inc),
                             origin = "fc2-" + str(inc),
                             num_classes = self.base.dropout_layers['softmax'].output_shape[1],
                             activation = ('softmax', self.temperature),
@@ -748,7 +751,6 @@ class cgan (object):
         # New copies of params so that I wont overwrite the 
         # pointer params in the phantom sampler network object.
         params = self.base.get_params(verbose = verbose)                
-        from yann.utils.pickle import shared_params
         params = shared_params (params)
 
         # For classifier layer, recreating...   
@@ -769,6 +771,8 @@ class cgan (object):
 
         params["softmax"] = [new_w, new_b]
 
+        # This net is initialized with the same parameters as the phantom / base network
+        # but with more nodes in the last softmax layer to accommodate for more labels.
         self.current = self._mlp(
                             dataset = dataset, 
                             params = params,
@@ -777,13 +781,14 @@ class cgan (object):
                             id = str(self.increment),
                             verbose = verbose) 
         
-        # AGain will have increment number of layers. 
+        # AGain will have increment number of GANs. 
         objective_layers = list()
-        for inc in xrange(len(self.gans.keys())):                 
+        for inc in xrange(len(self.gans.keys())):   
+                          
             self.current.add_layer ( type = "tensor",
                             id = "gan-input-" + str(inc),
-                            input = self.gans[inc].inference_layers [ 'G(z)'].output,
-                            input_shape = self.gans[inc].dropout_layers ['G(z)'].output_shape,
+                            input = self.phantom_labeler.inference_layers ["input-"+str(inc)].output,
+                            input_shape = self.phantom_labeler.dropout_layers ["input-"+str(inc)].output_shape,
                             verbose = verbose )
 
             self.current.add_layer ( type = "unflatten",
@@ -802,7 +807,7 @@ class cgan (object):
                             activation = 'relu',
                             regularize = True,  
                             batch_norm= True,       
-                            input_params = self.base.dropout_layers ['c1'].params,                                                                    
+                            input_params = self.current.dropout_layers ['c1'].params,                                                                    
                             verbose = verbose
                             )
 
@@ -815,7 +820,7 @@ class cgan (object):
                             batch_norm= True,
                             regularize = True,                                                         
                             activation = 'relu',    
-                            input_params = self.base.dropout_layers ['c2'].params,                                                                                                                
+                            input_params = self.current.dropout_layers ['c2'].params,                                                                                                                
                             verbose = verbose
                             )
 
@@ -827,7 +832,7 @@ class cgan (object):
                             batch_norm= True,
                             dropout_rate = 0.5,
                             regularize = True,                        
-                            input_params = self.base.dropout_layers['fc1'].params,                        
+                            input_params = self.current.dropout_layers['fc1'].params,                        
                             verbose = verbose )
 
             self.current.add_layer ( type = "dot_product",
@@ -838,15 +843,15 @@ class cgan (object):
                             batch_norm= True,
                             dropout_rate = 0.5,
                             regularize = True,                        
-                            input_params = self.base.dropout_layers['fc2'].params,                                                  
+                            input_params = self.current.dropout_layers['fc2'].params,                                                  
                             verbose = verbose  )                         
         
             self.current.add_layer ( type = "classifier",
-                            id = "softmax-phantom-" + str(inc),
+                            id = "softmax-gan-" + str(inc),
                             origin = "fc2-gan-" + str(inc),
                             num_classes = self.num_classes,
                             activation = ('softmax', self.temperature),
-                            input_params = self.base.dropout_layers \
+                            input_params = self.current.dropout_layers \
                                              ['softmax'].params,      
                             regularize = True,                                                                       
                             verbose = verbose )  
@@ -855,8 +860,6 @@ class cgan (object):
             # This will make the mentor values available to the current network so that we 
             # can caluclate errors
             ##########            
-            
-            
             self.current.add_layer(type = "random",
                                         id = "zero-targets-" + str(inc),
                                         num_neurons = (self.mini_batch_size, \
@@ -872,14 +875,14 @@ class cgan (object):
             self.current.add_layer (type = "tensor",
                                         id = "merge-import-" + str(inc),
                                         input = self.phantom_labeler.inference_layers \
-                                                        ["softmax-base-temperature-" + str(inc)].output,
+                                                        ["phantom-" + str(inc)].output,
                                         input_shape = self.phantom_labeler.inference_layers \
-                                                ["softmax-base-temperature-" + str(inc)].output_shape,
+                                                ["phantom-" + str(inc)].output_shape,
                                         verbose = verbose )
 
             self.current.add_layer (type = "merge",
                                         layer_type = "concatenate",
-                                        id = "phantom-target-" + str(inc),
+                                        id = "phantom-targets-" + str(inc),
                                         origin = ( "merge-import-" + str(inc),\
                                                     "zero-targets-" + str(inc)),
                                         verbose = verbose
@@ -897,7 +900,7 @@ class cgan (object):
                             id = "obj-phantom-" + str(inc),
                             layer_type = "error",
                             error = "rmse",
-                            origin = ("softmax-phantom-" + str(inc), 'phantom-target-' + str(inc)),
+                            origin = ("softmax-gan-" + str(inc), "phantom-targets-" + str(inc)),
                             )      
             objective_layers.append("obj-phantom-" +str(inc) )
 
@@ -916,7 +919,7 @@ class cgan (object):
                 objective_layers = objective_layers,
                 datastream = 'data',
                 classifier_layer = 'softmax',
-                verbose = 3
+                verbose = verbose
                 )
     
     def update_base(self,
@@ -936,12 +939,16 @@ class cgan (object):
             dataset = self.dataset[-1]
         
         ids = list()
-        for lyr in self.base.layers.keys():
-            ids.append (lyr.id)
+        ids = self.base.get_params().keys()
         
+        # Creating new copies of params again for the sake of 
+        # seperation
         params = OrderedDict()
+        current_params = self.current.get_params(verbose = verbose)                        
+
         for id in ids:
-            params[id] = self.current.dropout_layers[id].params
+            params[id] = current_params[id]
+        params = shared_params (params)
         
         self.base = self._mlp( dataset = dataset, 
                                 params = params,
@@ -951,33 +958,6 @@ class cgan (object):
                                 num_classes = self.num_classes,
                                 verbose = verbose)
     
-    def train_current ( self, 
-                        save_after_epochs = 1,
-                        lr = (0.05, 0.01, 0.001), 
-                        epochs = (20, 20), 
-                        verbose = 2):
-        """
-        This method will train the incremental MLP on incremental dataset. 
-
-        Args:
-            lr : leanring rates to train with. Default is (0.05, 0.01, 0.001)
-            epochs: Epochs to train with. Default is (20, 20)               
-            verbose : As usual.
-        """     
-
-        if verbose >=2 :
-            print (".. Training current increment network")                  
-        self.current.train( epochs = epochs, 
-                validate_after_epochs = 1,
-                visualize_after_epochs = 10,   
-                save_after_epochs = save_after_epochs,             
-                training_accuracy = True,
-                show_progress = True,
-                early_terminate = False,
-                learning_rates = lr,               
-                verbose = verbose)
-
-        self.current.test(verbose = verbose)
 
 
 if __name__ == '__main__':
