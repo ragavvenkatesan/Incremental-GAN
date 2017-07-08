@@ -5,7 +5,7 @@ This is the code for the paper:
 How to run the code
 -------------------
 
-There are three different codes in this git one for mnist, cifar10 and svhn datasets, each in its own directory. Each directory has a 
+There are three different codes in this git one for mnist, cifar10 and svhn datasets, each in its own directory. These are the incremental learning experiments. Each directory has a 
 ``site_.py`` for site Sb and a ``site_2.py`` for Si as mentioned in the paper. ``site_1.py`` will learn both Nb and Gb, each saving its 
 parameters, confusion matrices and some activities in the ``records\site_1`` directory. These will be loaded when running the ``site_2.py``
 which, should be run next. 
@@ -21,10 +21,13 @@ Run similarly for other datasets also. The directory ``records`` will be created
 layer-wise activities and confusion matrices as described in the paper. All you need will be available in this directory and it is easily
 navigable as directories are documented by nomenclature.
 
+The continual learning setups are in mnist-continual and svhn-continual directories and can run the continual learning algorithms. To run these simply run:
 
-The MNIST block works as it says in the paper. The CIFAR-10 and SVHN are still begin setup to produce results using a deconvolutional GAN.
-Set it up as per the paper and it will work, but at the moment, we are experimenting for better results. 
+.. code-block:: bash
 
+    python mnist-continual\continual.py
+
+Results are stored in a similar fashion.
 
 Pre-requisites
 --------------
