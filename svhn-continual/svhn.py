@@ -37,7 +37,6 @@ class cgan (object):
     def _gan (self,
               dataset = None,
               params = None,
-              optimizer_params = None,
               cook = True,
               root = '.', verbose = 1):
         """
@@ -60,7 +59,7 @@ class cgan (object):
             Ian Goodfellow's original code and implementation for MNIST adapted from his source code:
             https://github.com/goodfeli/adversarial/blob/master/mnist.yaml .It might not be a perfect 
             replicaiton, but I tried as best as I could.
-        """           
+        """                      
         if dataset is None:
             dataset = self.dataset[-1]
         else:
@@ -71,15 +70,13 @@ class cgan (object):
 
         input_params = None
 
-        if optimizer_params is None:
-            optimizer_params =  {        
-                        "momentum_type"       : 'false',             
-                        "momentum_params"     : (0.55, 0.9, 20),      
-                        "regularization"      : (0.00001, 0.00001),       
-                        "optimizer_type"      : 'adam',                
-                        "id"                  : "main"
-                                }
-
+        optimizer_params =  {        
+                    "momentum_type"       : 'false',             
+                    "momentum_params"     : (0.55, 0.9, 20),      
+                    "regularization"      : (0.00001, 0.00001),       
+                    "optimizer_type"      : 'adam',                
+                    "id"                  : "main"
+                            }
 
 
         dataset_params  = {
@@ -89,19 +86,19 @@ class cgan (object):
                         }
 
         visualizer_params = {
-                        "root"       : root + '/visualizer/gan_' + str(self.increment),
+                        "root"       : root + '/visualizer/gan',
                         "frequency"  : 1,
                         "sample_size": 225,
                         "rgb_filters": True,
                         "debug_functions" : False,
-                        "debug_layers": True,  
+                        "debug_layers": False,  
                         "id"         : 'main'
                             }  
-                        
+
         resultor_params    =    {
-                    "root"      : root + "/resultor/gan_" + str(self.increment),
+                    "root"      : root + "/resultor/gan",
                     "id"        : "resultor"
-                                }        
+                                }     
 
 
         regularize = True
@@ -639,7 +636,6 @@ class cgan (object):
     def create_gan ( self, 
                     dataset = None, 
                     params = None, 
-                    optimizer_params = None,
                     cook = True, 
                     root = '.', verbose = 1 ):
         """
@@ -662,7 +658,6 @@ class cgan (object):
                             params = params,
                             cook = cook,
                             root = root,
-                            optimizer_params = optimizer_params,
                             verbose = verbose)
         self.gans[self.increment] = gan_net 
         self._increment()
@@ -924,7 +919,7 @@ class cgan (object):
             self.current.add_layer ( type = "unflatten",
                             id = "gan-input-unflattened-" + str(inc),
                             origin ="gan-input-" + str(inc),
-                            shape = (32,32,3),
+                            shape = (32,32),
                             verbose = verbose
                             )
 

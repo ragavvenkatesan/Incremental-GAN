@@ -1,5 +1,5 @@
 import sys, os
-from mnist import cgan
+from svhn import cgan
 from dataset import cook_continual as make_dataset
 
 if __name__ == '__main__':

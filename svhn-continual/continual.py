@@ -4,8 +4,8 @@ from dataset import cook_continual as make_dataset
 
 if __name__ == '__main__':
     
-    gan_lr = (0.04, 0.00001)    
-    gan_epochs =(8)
+    gan_lr = (0.00005, 0.001)    
+    gan_epochs =(30)
     mlp_lr = (0.00005, 0.00001)    
     mlp_epochs =(50)
     cook = True 
@@ -24,14 +24,7 @@ if __name__ == '__main__':
 
     print ("\n\n\n                       ---------- Base GAN ------------ \
         \n\n\n ")          
-    optimizer_params =  {        
-            "momentum_type"       : 'false',             
-            "momentum_params"     : (0.55, 0.6, 20),      
-            "regularization"      : (0.00001, 0.00001),       
-            "optimizer_type"      : 'adam',                
-            "id"                  : "main"
-                    }
-    system.create_gan(dataset = dataset, cook = cook, optimizer_params = optimizer_params, verbose = 2)
+    system.create_gan(dataset = dataset, cook = cook, verbose = 2)
     system.train_gan( lr = gan_lr, epochs = gan_epochs)
 
     # Now that the base and the gans are setup for the 
@@ -43,9 +36,8 @@ if __name__ == '__main__':
 
     print ("\n\n\n                   ---------- First Increment PS ------------ \
         \n\n\n ")           
-    gan_lr = (0.004, 0.000005)    
-    gan_epochs =(30)
-    system.update_phantom_labeler(temperature = 3, verbose = 2)
+
+    system.update_phantom_labeler(temperature = 2, verbose = 2)
 
     initial_split = {   "train"  : [4,5,6],
                         "test"   : [0,1,2,3,4,5,6]  }  
@@ -76,7 +68,7 @@ if __name__ == '__main__':
     print ("\n\n\n                   ---------- Second Increment PS ------------ \
         \n\n\n ")           
 
-    system.update_phantom_labeler(temperature = 3, verbose = 2)
+    system.update_phantom_labeler(temperature = 2, verbose = 2)
 
     print ("\n\n\n                   ---------- Second Increment MLP ------------ \
         \n\n\n ")           
